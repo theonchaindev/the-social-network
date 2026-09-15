@@ -21,10 +21,10 @@ export function Timeline() {
         className="relative flex h-[100svh] w-full flex-col overflow-hidden pb-16 pt-28 md:pt-36"
       >
         <div className="mx-auto w-full max-w-[1400px] shrink-0 px-6 md:px-12">
-          <p className="label mb-6">Twenty-two years</p>
+          <p className="label mb-6">Twenty-two years of the graph</p>
           <SplitLines
             as="h2"
-            text="2004 to 2026, in eight frames."
+            text="Harvard to a trillion dollars."
             className="headline max-w-[18ch] text-[clamp(1.75rem,4vw,3rem)] text-cold-100"
           />
         </div>

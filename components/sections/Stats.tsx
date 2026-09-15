@@ -17,13 +17,17 @@ export function Stats() {
     >
       <div className="mx-auto max-w-[1400px] px-6 md:px-12">
         <div className="mb-16 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <SplitLines
-            as="h2"
-            text="Scale is the only moat."
-            className="headline max-w-[14ch] text-[clamp(1.9rem,4.4vw,3.5rem)] text-cold-100"
-          />
-          <p className="label max-w-[28ch] text-cold-350">
-            Indexed 00:00 UTC · illustrative figures
+          <div>
+            <p className="label mb-6">The record</p>
+            <SplitLines
+              as="h2"
+              text="Scale is the only moat."
+              className="headline max-w-[14ch] text-[clamp(1.9rem,4.4vw,3.5rem)] text-cold-100"
+            />
+          </div>
+          <p className="label max-w-[30ch] text-cold-350 md:text-right">
+            Facebook and Meta, as disclosed · METAx figures elsewhere on this
+            page are illustrative
           </p>
         </div>
 
@@ -38,9 +42,9 @@ export function Stats() {
 
               <Counter
                 value={stat.value}
-                decimals={"decimals" in stat ? stat.decimals : 0}
-                prefix={"prefix" in stat ? stat.prefix : ""}
-                suffix={stat.suffix}
+                decimals={stat.decimals ?? 0}
+                prefix={stat.prefix ?? ""}
+                suffix={stat.suffix ?? ""}
                 label={stat.label}
                 className="headline block text-[clamp(1.8rem,3.4vw,2.9rem)] text-cold-100"
               />

@@ -22,10 +22,24 @@ reproduced.
 | Scene | File | What it does |
 | --- | --- | --- |
 | Hero globe | `components/three/GlobeScene.tsx` | ~2,400 instanced nodes on a sphere, wired by nearest-neighbour edges. Expanding rings sweep across the surface as if requests were propagating. Mouse tilts it with inertia; the camera dollies and parallaxes on its own. |
-| Social graph | `components/three/GraphScene.tsx` | A preferential-attachment graph laid out force-directed at mount. Scroll grows it from one node to ~160 glassy spheres, edges drawing themselves in. Hovering a node lights its neighbourhood. |
+| Social graph | `components/three/GraphScene.tsx` | A preferential-attachment graph laid out force-directed at mount. Scroll grows it from one node to ~160 profile pictures, edges drawing themselves in. Hovering one lights its neighbourhood in amber and steps everything else back. |
 | Glass cards | `components/three/GlassCards.tsx` | Six transmission-material slabs that tilt toward the cursor and reorder in depth as you scroll. Faces are canvas textures drawn with the page's own webfonts. |
 | Rain on glass | `components/three/RainGlass.tsx` | A fragment shader. The backdrop is analytic, so it can be sampled blurred across the pane and sharp inside each droplet — that contrast is what reads as glass. |
 | CRT terminal | `components/three/CRTScene.tsx` | A 2004-ish tube typing out a fake session onto a canvas texture, its phosphor spilling onto the desk. |
+
+## The faces
+
+The nodes wear generated profile pictures, not real ones. `lib/avatars.ts`
+draws 64 variants onto a single canvas atlas — default head-and-shoulders
+silhouettes, initials tiles for the people who never uploaded anything, and
+out-of-focus photo-ish tiles — and the graph samples it per instance with a UV
+offset, so the whole network stays one draw call. Nobody's actual photograph is
+used anywhere on this site.
+
+The discs are billboarded in the vertex shader rather than rotated on the CPU,
+which means a geometry raycast would miss them entirely. Hover is resolved in
+screen space instead: project every node centre, compare against the pointer in
+NDC, take the nearest within its projected radius.
 
 ## Structure
 
@@ -48,6 +62,12 @@ initial value. Object-valued uniforms (`Color`, `Vector4`) keep working by
 reference, which makes the failure look intermittent. Write
 `materialRef.current.uniforms.uFoo.value = x` inside `useFrame`.
 
+**A full-bleed overlay eats every pointer event.** The pinned chapter copy sits
+in a `z-10` container covering the whole canvas. Transparent or not, it
+swallowed every `pointermove` before the graph could see one, so node hover
+silently did nothing. Any non-interactive layer sitting over a canvas needs
+`pointer-events-none`.
+
 **Geometry belongs in JSX, not the `geometry` prop.** A prebuilt
 `BufferGeometry` handed in via `geometry={...}` is disposed on React's
 StrictMode remount and never re-uploads, so the object silently renders
@@ -55,8 +75,8 @@ nothing. Declare `<bufferGeometry>` with `<bufferAttribute>` children instead.
 
 ## Performance
 
-Lighthouse on the production build, desktop preset: **97 performance, 100
-accessibility, 100 best practices, 100 SEO** (LCP 0.6s, TBT 60ms, CLS 0).
+Lighthouse on the production build, desktop preset: **98 performance, 100
+accessibility, 100 best practices, 100 SEO** (LCP 0.6s, CLS 0).
 
 Three.js and react-three-fiber are kept out of the initial bundle behind
 `components/three/LazyCanvas.tsx`. Each scene mounts only once its section has
@@ -78,8 +98,16 @@ npm run build && npm run start
 
 ## Disclaimer
 
-METAx is not a real product. This is a concept site: every price, figure and
-attestation is illustrative, the signup form has no backend and stores nothing,
-and nothing here is financial advice or an offer to sell securities. It is not
-affiliated with, endorsed by, or connected to Meta Platforms, Inc., and is not
-associated with any film or its rights holders.
+METAx is not a real product. There is no token, no market, no custody
+arrangement and no reserve; the signup form has no backend and stores nothing;
+nothing here is financial advice or an offer to sell securities.
+
+Historical dates and figures about Facebook and Meta are drawn from the
+company's own disclosures and contemporaneous reporting and are included as
+factual reference. Every METAx figure is invented. The faces in the network are
+generated artwork.
+
+This site is independent. It is not affiliated with, endorsed by, or connected
+to Meta Platforms, Inc. or any of its products, and is not associated with any
+film or its rights holders. No Meta or Facebook logos, trademarks or assets are
+used.

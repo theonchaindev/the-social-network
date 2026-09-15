@@ -43,8 +43,8 @@ export function Hero({ ready }: { ready: boolean }) {
           transition={{ duration: 1, delay: 0.2 }}
           className="label mb-8"
         >
-          <span className="text-amber">●</span>&nbsp;&nbsp;Tokenized equity · Live
-          on mainnet · 02:14 EST
+          <span className="text-amber">●</span>&nbsp;&nbsp;A concept ·
+          Tokenized equity · Kirkland House, 02:14 EST
         </motion.p>
 
         <SplitLines

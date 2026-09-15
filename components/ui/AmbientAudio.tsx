@@ -111,7 +111,8 @@ export function AmbientAudio() {
       type="button"
       onClick={toggle}
       aria-pressed={on}
-      className="fixed bottom-12 right-6 z-50 flex items-center gap-3 border border-cold-500/40 bg-ink-deep/70 px-4 py-2.5 backdrop-blur-sm transition-colors duration-500 hover:border-amber/60 md:right-12"
+      aria-label={on ? "Turn ambient sound off" : "Turn ambient sound on"}
+      className="fixed bottom-12 right-6 z-50 flex items-center gap-3 border border-cold-500/40 bg-ink-deep/70 px-3 py-2.5 backdrop-blur-sm transition-colors duration-500 hover:border-amber/60 sm:px-4 md:right-12"
     >
       <span className="flex h-3 items-end gap-[3px]" aria-hidden="true">
         {[0, 1, 2].map((i) => (
@@ -128,7 +129,8 @@ export function AmbientAudio() {
           />
         ))}
       </span>
-      <span className="label text-[10px] text-cold-300">
+      {/* Label is dropped on narrow screens, where it lands on the copy. */}
+      <span className="label hidden text-[10px] text-cold-300 sm:inline">
         {on ? "Sound on" : "Sound off"}
       </span>
       <style>{`
