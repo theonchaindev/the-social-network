@@ -1,26 +1,199 @@
 @import "tailwindcss";
 
+@theme {
+  /* Fincher-coded palette: crushed blacks, cold mids, sodium practicals */
+  --color-ink: #0b0f1a;
+  --color-ink-deep: #05070d;
+  --color-ink-raise: #111725;
+  --color-teal-shadow: #0d1f26;
+  --color-teal-mid: #17383f;
+  --color-cold-100: #c3ccd9;
+  --color-cold-200: #97a4b6;
+  --color-cold-300: #6e7d93;
+  --color-cold-350: #8496ab;
+  --color-cold-400: #4c5a70;
+  --color-cold-500: #354154;
+  --color-amber: #e8a33d;
+  --color-amber-soft: #f2c584;
+  --color-amber-deep: #a86e1e;
+  --color-fb: #3b5998;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
+  --font-mono: var(--font-mono-jb), ui-monospace, SFMono-Regular, monospace;
+
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-cine: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --grain-opacity: 0.055;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background-color: var(--color-ink-deep);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-ink-deep);
+  color: var(--color-cold-100);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  margin: 0;
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+::selection {
+  background: var(--color-amber);
+  color: var(--color-ink-deep);
+}
+
+/* ---- Editorial type ---- */
+.headline {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 0.95;
+  text-wrap: balance;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  /* 5.9:1 on --color-ink-deep; anything darker fails WCAG AA at this size. */
+  color: var(--color-cold-350);
+}
+
+/* ---- Line-split reveal primitives (GSAP targets) ---- */
+.split-line {
+  display: block;
+  overflow: hidden;
+}
+.split-line > span {
+  display: block;
+  will-change: transform, opacity;
+}
+
+/* Tailwind's sr-only, needed by SplitLines and Counter */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- Film grain ---- */
+.grain::after {
+  content: "";
+  position: fixed;
+  inset: -50%;
+  z-index: 60;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain-shift 0.6s steps(3) infinite;
+}
+
+@keyframes grain-shift {
+  0% { transform: translate(0, 0); }
+  33% { transform: translate(-2%, 1.5%); }
+  66% { transform: translate(1.5%, -1%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ---- Vignette ---- */
+.vignette::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    transparent 38%,
+    rgba(3, 5, 10, 0.5) 82%,
+    rgba(3, 5, 10, 0.86) 100%
+  );
+}
+
+/* ---- Anamorphic flare ---- */
+.flare {
+  position: absolute;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  filter: blur(40px);
+}
+
+/* ---- Custom cursor ---- */
+@media (hover: hover) and (pointer: fine) {
+  html.has-custom-cursor,
+  html.has-custom-cursor * {
+    cursor: none !important;
+  }
+}
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-ink-deep);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-cold-500);
+}
+
+/* ---- Reduced motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .grain::after {
+    animation: none;
+  }
+}
+
+/* Focus ring: accessible against crushed blacks */
+:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.sr-only-focusable:not(:focus):not(:focus-within) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
