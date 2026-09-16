@@ -7,6 +7,7 @@ import { useHasFinePointer, useReducedMotion } from "@/hooks/useMediaQuery";
 type Props = {
   children: ReactNode;
   href?: string;
+  external?: boolean;
   onClick?: () => void;
   type?: "button" | "submit";
   variant?: "primary" | "ghost";
@@ -17,6 +18,7 @@ type Props = {
 export function MagneticButton({
   children,
   href,
+  external = false,
   onClick,
   type = "button",
   variant = "primary",
@@ -81,6 +83,7 @@ export function MagneticButton({
       <a
         ref={ref as React.RefObject<HTMLAnchorElement>}
         href={href}
+        {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
         className={`${base} ${styles} ${className}`}
       >
         {content}

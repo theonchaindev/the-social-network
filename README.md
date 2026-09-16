@@ -28,6 +28,10 @@ reproduced.
 | Rain on glass | `components/three/RainGlass.tsx` | A fragment shader. The backdrop is analytic, so it can be sampled blurred across the pane and sharp inside each droplet — that contrast is what reads as glass. |
 | CRT terminal | `components/three/CRTScene.tsx` | A 2004-ish tube typing out a fake session onto a canvas texture, its phosphor spilling onto the desk. |
 
+The product section explains the actual mechanism — custody, the price oracle,
+redemption, corporate actions, attestation, market hours — alongside a three
+step deposit/mint/redeem walkthrough and a panel on the underlying stock.
+
 ## The faces
 
 The nodes wear generated profile pictures, not real ones. `lib/avatars.ts`
@@ -119,8 +123,10 @@ npm run build && npm run start
 ## Disclaimer
 
 METAx is not a real product. There is no token, no market, no custody
-arrangement and no reserve; the signup form has no backend and stores nothing;
-nothing here is financial advice or an offer to sell securities.
+arrangement and no reserve, and nothing here is financial advice or an offer to
+sell securities. There is no footer — the disclaimer lives in
+`components/ui/LegalStrip.tsx` at the foot of the page, and it needs to stay
+there: the site names Meta throughout and shows a simulated payment ledger.
 
 Historical dates and figures about Facebook and Meta are drawn from the
 company's own disclosures and contemporaneous reporting and are included as

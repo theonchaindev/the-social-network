@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SceneCanvas } from "@/components/three/LazyCanvas";
 import { SplitLines } from "@/components/ui/SplitLines";
-import { features } from "@/lib/content";
+import { features, mechanics, underlying } from "@/lib/content";
 import { ScrollTrigger } from "@/lib/gsap";
 import { useIsMobile, useReducedMotion } from "@/hooks/useMediaQuery";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
@@ -56,7 +56,7 @@ export function Features() {
             <p className="label mb-6">The product</p>
             <SplitLines
               as="h2"
-              text="Six primitives. No opening bell."
+              text="One share in. One token out."
               className="headline max-w-[16ch] text-[clamp(1.9rem,4.4vw,3.5rem)] text-cold-100"
             />
           </div>
@@ -95,6 +95,61 @@ export function Features() {
           >
             {features[shown].body}
           </p>
+        </div>
+
+        {/* How the thing actually works */}
+        <div className="mt-20 grid gap-12 border-t border-cold-500/20 pt-12 lg:grid-cols-[1.15fr_1fr]">
+          <div>
+            <p className="label mb-8">The mechanism</p>
+            <ol className="grid gap-px bg-cold-500/20">
+              {mechanics.map((step) => (
+                <li
+                  key={step.step}
+                  className="flex gap-6 bg-ink-deep py-6 pr-4 md:gap-8"
+                >
+                  <span className="label shrink-0 text-[10px] text-amber">
+                    {step.step}
+                  </span>
+                  <div>
+                    <h3 className="headline mb-2 text-[clamp(1.1rem,1.9vw,1.45rem)] text-cold-100">
+                      {step.title}
+                    </h3>
+                    <p className="max-w-[46ch] text-[14px] leading-relaxed text-cold-300">
+                      {step.body}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div className="border border-cold-500/25 p-7 md:p-9">
+            <div className="mb-7 flex items-baseline justify-between gap-4">
+              <p className="label">{underlying.label}</p>
+              <p className="font-mono text-[12px] tracking-[0.12em] text-amber">
+                {underlying.ticker}
+              </p>
+            </div>
+
+            <h3 className="headline mb-5 text-[clamp(1.2rem,2.1vw,1.6rem)] text-cold-100">
+              {underlying.title}
+            </h3>
+            <p className="mb-8 max-w-[48ch] text-[14px] leading-relaxed text-cold-300">
+              {underlying.body}
+            </p>
+
+            <dl className="grid gap-px bg-cold-500/20">
+              {underlying.facts.map(([term, value]) => (
+                <div
+                  key={term}
+                  className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 bg-ink-deep py-3"
+                >
+                  <dt className="label text-[10px]">{term}</dt>
+                  <dd className="font-mono text-[12px] text-cold-200">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
         </div>
 
         {/* Hover is not available on touch, so the full list stays readable */}

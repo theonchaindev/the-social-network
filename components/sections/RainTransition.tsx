@@ -33,20 +33,21 @@ export function RainTransition() {
         className="relative z-10 mx-auto flex h-full max-w-[1400px] flex-col justify-center px-6 md:px-12"
       >
         <p data-reveal className="label mb-8">
-          Interstitial · 04:06 EST
+          Interstitial · Kirkland House, 02:14
         </p>
         <SplitLines
           as="p"
-          text="Nobody watches a market at four in the morning. The market does not care."
-          className="headline max-w-[17ch] text-[clamp(1.75rem,4.6vw,3.6rem)] text-cold-100"
+          text="Friendship was the interface. The list was the asset."
+          className="headline max-w-[16ch] text-[clamp(1.85rem,4.8vw,3.8rem)] text-cold-100"
           start="top 80%"
         />
         <p
           data-reveal
-          className="mt-10 max-w-[44ch] border-l border-cold-500/40 pl-6 text-[14px] leading-relaxed text-cold-300"
+          className="mt-10 max-w-[46ch] border-l border-cold-500/40 pl-6 text-[14px] leading-relaxed text-cold-300"
         >
-          Settlement runs while the building sleeps. The attestation clock does
-          not observe holidays, weekends, or the end of a quarter.
+          Two thousand faces on a closed campus, ordered by nothing but who
+          already knew whom. Everything built since has been an argument about
+          what that ordering is worth.
         </p>
       </div>
     </section>

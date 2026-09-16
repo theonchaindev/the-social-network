@@ -11,7 +11,7 @@ import { Timeline } from "@/components/sections/Timeline";
 import { Community } from "@/components/sections/Community";
 import { Nav } from "@/components/ui/Nav";
 import { Ticker } from "@/components/ui/Ticker";
-import { Footer } from "@/components/ui/Footer";
+import { LegalStrip } from "@/components/ui/LegalStrip";
 import { Preloader } from "@/components/ui/Preloader";
 import { CustomCursor } from "@/components/ui/CustomCursor";
 import { Spotlight } from "@/components/ui/Spotlight";
@@ -50,7 +50,7 @@ export default function Home() {
         <Community />
       </main>
 
-      <Footer />
+      <LegalStrip />
       <AmbientAudio />
       <Ticker />
     </>

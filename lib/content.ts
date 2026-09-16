@@ -1,3 +1,13 @@
+/**
+ * TODO: swap in the real handle. Points at x.com's root on purpose — guessing
+ * a handle would send people to a stranger's account.
+ */
+export const social = {
+  label: "Follow on X",
+  handle: "@metax",
+  url: "https://x.com/",
+} as const;
+
 export const site = {
   name: "METAx",
   ticker: "METAx",
@@ -81,42 +91,74 @@ export const stats: Stat[] = [
 
 export const features = [
   {
-    id: "settlement",
-    title: "Continuous settlement",
-    body: "Positions would clear in seconds, every hour of every day. Equity markets keep banking hours; the network never has.",
-    meta: "T+0",
-  },
-  {
-    id: "backing",
-    title: "One-to-one attestation",
-    body: "Every token maps to a custodied share, with reserve attestations published on a fixed cadence, on-chain.",
-    meta: "1:1",
-  },
-  {
-    id: "fractional",
-    title: "Fractional to eight places",
-    body: "A share that trades in the hundreds becomes a position anyone can hold. Ownership stops being a threshold.",
-    meta: "0.00000001",
-  },
-  {
     id: "custody",
-    title: "Self-custody by default",
-    body: "Your keys hold the position. No withdrawal window, no counterparty queue, no permission required to leave.",
-    meta: "NON-CUSTODIAL",
+    title: "Shares in a vault",
+    body: "A METAx token exists because a share of META Class A common stock was delivered to a regulated custodian and locked in a segregated account. Tokens are minted on deposit, and only on deposit.",
+    meta: "CUSTODY",
   },
   {
-    id: "graph",
-    title: "Graph-native analytics",
-    body: "Daily actives, reach and cohort decay rendered as a live network rather than a quarterly slide.",
-    meta: "LIVE",
+    id: "oracle",
+    title: "The tape, on-chain",
+    body: "Price is not invented here. A signed feed of the NASDAQ consolidated tape is pushed on-chain each block, so the token marks against the same last-sale print the exchange publishes.",
+    meta: "ORACLE",
   },
   {
-    id: "composability",
-    title: "Composable exposure",
-    body: "A standard token. Lend it, pair it, collateralise it, or let it sit there doing nothing at all.",
-    meta: "ERC-20",
+    id: "redeem",
+    title: "Burn to redeem",
+    body: "Send the token back and the custodian releases the share, or its cash value at the next print. The exit is the same door as the entrance, which is what makes the peg hold.",
+    meta: "REDEMPTION",
+  },
+  {
+    id: "actions",
+    title: "Dividends pass through",
+    body: "Meta began paying a dividend in 2024. Splits, buybacks and distributions are applied against the token supply at the record date, so nobody is diluted by an action they never saw.",
+    meta: "CORPORATE ACTIONS",
+  },
+  {
+    id: "attestation",
+    title: "Proof, not promises",
+    body: "The vault publishes a signed reserve report on a fixed cadence — shares held, tokens outstanding, the difference between them. Anyone can check the ratio without asking permission.",
+    meta: "ATTESTATION",
+  },
+  {
+    id: "hours",
+    title: "The market never closes",
+    body: "NASDAQ runs 09:30 to 16:00 Eastern, five days a week. The ledger runs all of them. Settlement is final in seconds rather than two business days.",
+    meta: "T+0 · 24/7",
   },
 ] as const;
+
+/** The mechanism, in three moves. */
+export const mechanics = [
+  {
+    step: "01",
+    title: "Deposit",
+    body: "A share of META is delivered to the custodian and locked. It stops being tradeable in the conventional market the moment it is.",
+  },
+  {
+    step: "02",
+    title: "Mint",
+    body: "The contract issues exactly one METAx against that share, to the depositor's address. Supply cannot move ahead of the vault.",
+  },
+  {
+    step: "03",
+    title: "Trade or redeem",
+    body: "The token moves like any ERC-20 — lent, paired, collateralised — until somebody burns it and takes the share back out.",
+  },
+] as const;
+
+export const underlying = {
+  label: "The underlying",
+  ticker: "META · NASDAQ",
+  title: "Class A common stock of Meta Platforms, Inc.",
+  body: "Economic exposure passes through: price, dividends, splits, buybacks. The vote does not — the custodian remains the holder of record, and a tokenholder has no say in how the company is run.",
+  facts: [
+    ["Listed", "18 May 2012, at $38.00"],
+    ["Ticker", "FB until June 2022, META since"],
+    ["Dividend", "Initiated 2024"],
+    ["Share class", "Class A · one vote"],
+  ],
+} as const;
 
 export const timeline = [
   {
