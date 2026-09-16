@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useIsMobile, useReducedMotion } from "@/hooks/useMediaQuery";
 
@@ -9,7 +9,11 @@ type Props = {
   children: ReactNode;
   className?: string;
   camera?: { position: [number, number, number]; fov?: number };
-  /** Extra viewport margin so a scene warms up just before it scrolls in. */
+  /**
+   * Extra viewport margin so a scene warms up well before it scrolls in. A
+   * canvas that is resized while its loop is paused stretches its last frame
+   * until something redraws it, which reads as a badly cropped scene.
+   */
   rootMargin?: string;
   eventSource?: boolean;
 };
@@ -66,7 +70,7 @@ export function SceneCanvas({
   children,
   className,
   camera = { position: [0, 0, 5], fov: 45 },
-  rootMargin = "200px",
+  rootMargin = "420px",
 }: Props) {
   const wrapper = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -90,12 +94,24 @@ export function SceneCanvas({
     return () => io.disconnect();
   }, [rootMargin]);
 
+  // A new object here makes r3f re-apply the camera prop on every re-render,
+  // resetting whatever FitCamera had worked out.
+  const cameraProps = useMemo(
+    () => ({
+      position: camera.position,
+      fov: camera.fov ?? 45,
+      near: 0.1,
+      far: 100,
+    }),
+    [camera.position, camera.fov],
+  );
+
   return (
     <div ref={wrapper} className={className}>
       <Canvas
         // Cap DPR on mobile; AdaptiveDpr drops it further if frames slip.
         dpr={isMobile ? [1, 1.5] : [1, 2]}
-        camera={{ ...camera, fov: camera.fov ?? 45, near: 0.1, far: 100 }}
+        camera={cameraProps}
         frameloop={visible ? "always" : "never"}
         gl={{
           antialias: !isMobile,

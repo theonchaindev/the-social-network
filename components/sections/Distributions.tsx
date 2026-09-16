@@ -124,7 +124,7 @@ export function Distributions() {
           <div className="relative min-h-[320px] min-w-0 bg-ink-deep md:min-h-[420px]">
             <SceneCanvas
               className="absolute inset-0 h-full w-full"
-              camera={{ position: [0, 0, 7.4], fov: 42 }}
+              camera={{ position: [0, 0, 8.6], fov: 42 }}
             >
               <PayoutScene />
             </SceneCanvas>

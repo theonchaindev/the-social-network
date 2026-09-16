@@ -60,7 +60,7 @@ function Card({
     const col = index - (total - 1) / 2;
     return {
       x: col * columnGap(isMobile),
-      y: (index % 2 === 0 ? 1 : -1) * (isMobile ? 0.5 : 0.42),
+      y: (index % 2 === 0 ? 1 : -1) * rowOffset(isMobile),
       seed: index * 1.7,
     };
   }, [index, total, isMobile]);
@@ -77,7 +77,7 @@ function Card({
     const depth = Math.cos((phase / total) * Math.PI * 2);
     const targetZ = depth * 0.85 + (isHot ? 0.7 : 0);
 
-    const drift = reduced ? 0 : Math.sin(time * 0.5 + slot.seed) * 0.11;
+    const drift = reduced ? 0 : Math.sin(time * 0.5 + slot.seed) * 0.13;
     const targetY = slot.y + drift + (isHot ? 0.12 : 0);
 
     g.position.x += (slot.x - g.position.x) * Math.min(1, dt * 3);
@@ -156,6 +156,11 @@ function columnGap(isMobile: boolean) {
   return isMobile ? 0.84 : 1.5;
 }
 
+/** Vertical stagger between the two rows of the deck. */
+function rowOffset(isMobile: boolean) {
+  return isMobile ? 0.62 : 0.55;
+}
+
 /** Furthest a card ever travels toward the camera: reorder plus hover lift. */
 const MAX_FORWARD = 1.55;
 
@@ -211,8 +216,8 @@ function Deck({ progress, onHover }: Props) {
 function Framing() {
   const isMobile = useIsMobile();
   const span = (features.length - 1) * columnGap(isMobile) + CARD_W;
-  // Cards drift and rise on hover, so the vertical extent is more than a card.
-  const height = CARD_H + (isMobile ? 1.5 : 1.3);
+  // Two staggered rows, plus drift and the hover lift on top of them.
+  const height = CARD_H + rowOffset(isMobile) * 2 + 0.4;
   return (
     <FitCamera width={span} height={height} margin={1.1} depth={MAX_FORWARD} />
   );

@@ -67,10 +67,13 @@ export function Features() {
         </div>
       </div>
 
-      <div className="relative h-[56vh] min-h-[380px] w-full md:h-[66vh]">
+      {/* Capped height: on a tall window a vh-only band leaves the deck
+          marooned in the middle of a mostly empty canvas, and pushes it past
+          the fold. */}
+      <div className="relative h-[min(58vh,460px)] min-h-[340px] w-full md:h-[min(52vh,560px)]">
         <SceneCanvas
           className="absolute inset-0 h-full w-full"
-          camera={{ position: [0, 0, 6.2], fov: 42 }}
+          camera={{ position: [0, 0, 6.6], fov: 42 }}
         >
           <GlassCardsScene progress={progress} onHover={onHover} />
         </SceneCanvas>
