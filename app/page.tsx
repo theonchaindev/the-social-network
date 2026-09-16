@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import { Hero } from "@/components/sections/Hero";
 import { Chapters } from "@/components/sections/Chapters";
 import { Stats } from "@/components/sections/Stats";
-import { Features } from "@/components/sections/Features";
 import { Distributions } from "@/components/sections/Distributions";
 import { RainTransition } from "@/components/sections/RainTransition";
 import { Timeline } from "@/components/sections/Timeline";
@@ -43,7 +42,6 @@ export default function Home() {
         <Hero ready={ready} />
         <Chapters />
         <Stats />
-        <Features />
         <Distributions />
         <RainTransition />
         <Timeline />

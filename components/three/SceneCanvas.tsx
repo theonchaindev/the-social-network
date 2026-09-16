@@ -19,6 +19,33 @@ type Props = {
 };
 
 /**
+ * postprocessing's EffectComposer calls renderer.setSize() as it mounts, and
+ * when the dimensions it passes are wrong three writes them straight onto the
+ * canvas element as an inline width/height. The canvas then overflows its
+ * panel and you are looking at the top-left corner of a much larger render.
+ *
+ * r3f only re-applies its own size when that size *changes*, so nothing
+ * corrects it. Re-assert the measured size whenever the element drifts.
+ */
+function CanvasSizeGuard() {
+  const gl = useThree((state) => state.gl);
+  const size = useThree((state) => state.size);
+
+  useFrame(() => {
+    if (!size.width || !size.height) return;
+    const el = gl.domElement;
+    if (
+      el.style.width !== `${size.width}px` ||
+      el.style.height !== `${size.height}px`
+    ) {
+      gl.setSize(size.width, size.height);
+    }
+  });
+
+  return null;
+}
+
+/**
  * Drops the render resolution when frames slip, and creeps it back when they
  * recover. Hand-rolled so the hero does not have to pull in drei.
  */
@@ -123,6 +150,7 @@ export function SceneCanvas({
           gl.setClearColor(0x05070d, 0);
         }}
       >
+        <CanvasSizeGuard />
         {mounted && children}
         {!reduced && <AdaptiveDpr />}
       </Canvas>

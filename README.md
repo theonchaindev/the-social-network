@@ -23,21 +23,15 @@ reproduced.
 | --- | --- | --- |
 | Hero globe | `components/three/GlobeScene.tsx` | ~2,400 instanced nodes on a sphere, wired by nearest-neighbour edges. Expanding rings sweep across the surface as if requests were propagating. Mouse tilts it with inertia; the camera dollies and parallaxes on its own. |
 | Social graph | `components/three/GraphScene.tsx` | A preferential-attachment graph laid out force-directed at mount. Scroll grows it from one node to ~160 profile pictures, edges drawing themselves in. Hovering one lights its neighbourhood in amber and steps everything else back. |
-| Glass cards | `components/three/GlassCards.tsx` | Six transmission-material slabs that tilt toward the cursor and reorder in depth as you scroll. Faces are canvas textures drawn with the page's own webfonts. |
 | Payout fan | `components/three/PayoutScene.tsx` | The contract at the centre, spokes running out to holder avatars. Packets travel each spoke on a per-spoke phase and the holder flares as one lands — all computed in the shader from one clock, so the CPU does nothing per frame. |
 | Rain on glass | `components/three/RainGlass.tsx` | A fragment shader. The backdrop is analytic, so it can be sampled blurred across the pane and sharp inside each droplet — that contrast is what reads as glass. |
 | CRT terminal | `components/three/CRTScene.tsx` | A 2004-ish tube typing out a fake session onto a canvas texture, its phosphor spilling onto the desk. |
 
-The product section runs Facebook's story across the floating cards — the
-directory, the feed, the moat, the listing, the rename, and what any of that
-leaves you owning — then explains the mechanism underneath it: a three step
-deposit/mint/redeem walkthrough and a panel on the underlying stock.
-
-Both card decks and the payout fan are framed by `components/three/FitCamera.tsx`,
-which pulls the camera back far enough that the content fits whatever aspect
-ratio its panel turns out to be. It also takes a `depth` for anything that
-travels toward the camera — the cards magnify as they reorder, and a fixed
-distance crops the outer ones.
+Scenes are framed by `components/three/FitCamera.tsx`, which pulls the camera
+back far enough that the content fits whatever aspect ratio its panel turns out
+to be, and re-derives that every frame so nothing can knock it out of sync. It
+also takes a `depth` for anything that travels toward the camera, since moving
+forward magnifies content out of a frame measured at rest.
 
 ## The faces
 
@@ -92,6 +86,21 @@ in a `z-10` container covering the whole canvas. Transparent or not, it
 swallowed every `pointermove` before the graph could see one, so node hover
 silently did nothing. Any non-interactive layer sitting over a canvas needs
 `pointer-events-none`.
+
+**postprocessing resizes the canvas element, and nothing puts it back.** When
+`EffectComposer` mounts it calls `renderer.setSize()`, and three writes those
+dimensions straight onto the canvas as an inline width/height. Get the wrong
+numbers and the canvas overflows its panel — you are then looking at the
+top-left corner of a much larger render, which reads as a wildly over-zoomed
+scene. r3f only re-applies its own size when that size *changes*, so nothing
+corrects it. `CanvasSizeGuard` in `SceneCanvas.tsx` re-asserts the measured
+size whenever the element drifts.
+
+Worth knowing how this presents: it only bites the one canvas that is not
+already full-bleed, it appears on scroll-in rather than on load, and it does
+not reproduce from `scrollIntoView` in a test — you have to scroll the page the
+way a reader does. Measure the canvas rect against its container rather than
+trusting how it looks.
 
 **A grid or flex child needs `min-w-0` around a scrollable table.** Grid items
 default to `min-width: auto`, so the ledger's `min-w-[520px]` stretched its

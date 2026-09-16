@@ -8,7 +8,6 @@ import { social } from "@/lib/content";
 const links = [
   { href: "#idea", label: "The idea" },
   { href: "#numbers", label: "Numbers" },
-  { href: "#product", label: "Product" },
   { href: "#distributions", label: "Payouts" },
   { href: "#timeline", label: "Timeline" },
 ];
