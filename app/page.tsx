@@ -5,6 +5,7 @@ import { Hero } from "@/components/sections/Hero";
 import { Chapters } from "@/components/sections/Chapters";
 import { Stats } from "@/components/sections/Stats";
 import { Features } from "@/components/sections/Features";
+import { Distributions } from "@/components/sections/Distributions";
 import { RainTransition } from "@/components/sections/RainTransition";
 import { Timeline } from "@/components/sections/Timeline";
 import { Community } from "@/components/sections/Community";
@@ -43,6 +44,7 @@ export default function Home() {
         <Chapters />
         <Stats />
         <Features />
+        <Distributions />
         <RainTransition />
         <Timeline />
         <Community />

@@ -111,7 +111,9 @@ export function AmbientAudio() {
       type="button"
       onClick={toggle}
       aria-pressed={on}
-      aria-label={on ? "Turn ambient sound off" : "Turn ambient sound on"}
+      // Matches the visible text exactly: an accessible name that does not
+      // contain the visible label fails WCAG 2.5.3.
+      aria-label={on ? "Sound on" : "Sound off"}
       className="fixed bottom-12 right-6 z-50 flex items-center gap-3 border border-cold-500/40 bg-ink-deep/70 px-3 py-2.5 backdrop-blur-sm transition-colors duration-500 hover:border-amber/60 sm:px-4 md:right-12"
     >
       <span className="flex h-3 items-end gap-[3px]" aria-hidden="true">

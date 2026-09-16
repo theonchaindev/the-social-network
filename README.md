@@ -24,6 +24,7 @@ reproduced.
 | Hero globe | `components/three/GlobeScene.tsx` | ~2,400 instanced nodes on a sphere, wired by nearest-neighbour edges. Expanding rings sweep across the surface as if requests were propagating. Mouse tilts it with inertia; the camera dollies and parallaxes on its own. |
 | Social graph | `components/three/GraphScene.tsx` | A preferential-attachment graph laid out force-directed at mount. Scroll grows it from one node to ~160 profile pictures, edges drawing themselves in. Hovering one lights its neighbourhood in amber and steps everything else back. |
 | Glass cards | `components/three/GlassCards.tsx` | Six transmission-material slabs that tilt toward the cursor and reorder in depth as you scroll. Faces are canvas textures drawn with the page's own webfonts. |
+| Payout fan | `components/three/PayoutScene.tsx` | The contract at the centre, spokes running out to holder avatars. Packets travel each spoke on a per-spoke phase and the holder flares as one lands — all computed in the shader from one clock, so the CPU does nothing per frame. |
 | Rain on glass | `components/three/RainGlass.tsx` | A fragment shader. The backdrop is analytic, so it can be sampled blurred across the pane and sharp inside each droplet — that contrast is what reads as glass. |
 | CRT terminal | `components/three/CRTScene.tsx` | A 2004-ish tube typing out a fake session onto a canvas texture, its phosphor spilling onto the desk. |
 
@@ -40,6 +41,19 @@ The discs are billboarded in the vertex shader rather than rotated on the CPU,
 which means a geometry raycast would miss them entirely. Hover is resolved in
 screen space instead: project every node centre, compare against the pointer in
 NDC, take the nearest within its projected radius.
+
+## The distributions feed
+
+`components/sections/Distributions.tsx` streams a ledger of outbound payments
+alongside the payout fan, with running totals and a countdown to the next
+round. **None of it is real.** Rows are generated client-side, the section is
+labelled "Simulated feed" in the panel header, carries a screen-reader caption
+saying the same, and closes with a line stating that no transaction shown has
+taken place.
+
+The opening rows come from a fixed seed so the server and the client render an
+identical table and hydration stays quiet; randomness only starts after mount.
+The stream pauses when the section is off screen.
 
 ## Structure
 
@@ -67,6 +81,12 @@ in a `z-10` container covering the whole canvas. Transparent or not, it
 swallowed every `pointermove` before the graph could see one, so node hover
 silently did nothing. Any non-interactive layer sitting over a canvas needs
 `pointer-events-none`.
+
+**A grid or flex child needs `min-w-0` around a scrollable table.** Grid items
+default to `min-width: auto`, so the ledger's `min-w-[520px]` stretched its
+whole column to 520px on a 390px viewport. `overflow-x: hidden` on the body hid
+the damage, and an overflow check passed while the 3D panel beside it was
+silently pushed off-centre.
 
 **Geometry belongs in JSX, not the `geometry` prop.** A prebuilt
 `BufferGeometry` handed in via `geometry={...}` is disposed on React's
