@@ -70,10 +70,10 @@ export function Hero({ ready }: { ready: boolean }) {
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={ready ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 1, delay: 0.95, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.8, delay: 0.62, ease: [0.16, 1, 0.3, 1] }}
             className="flex shrink-0 flex-wrap items-center gap-4"
           >
-            <MagneticButton href="#community">{site.cta}</MagneticButton>
+            <MagneticButton href="#distributions">{site.cta}</MagneticButton>
             <MagneticButton href="#idea" variant="ghost">
               {site.ctaSecondary}
             </MagneticButton>
@@ -84,7 +84,7 @@ export function Hero({ ready }: { ready: boolean }) {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: ready ? 1 : 0 }}
-        transition={{ duration: 1.2, delay: 1.3 }}
+        transition={{ duration: 1, delay: 1 }}
         className="pointer-events-none absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-3 md:flex"
       >
         <span className="label text-[10px]">Scroll</span>

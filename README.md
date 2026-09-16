@@ -28,9 +28,16 @@ reproduced.
 | Rain on glass | `components/three/RainGlass.tsx` | A fragment shader. The backdrop is analytic, so it can be sampled blurred across the pane and sharp inside each droplet — that contrast is what reads as glass. |
 | CRT terminal | `components/three/CRTScene.tsx` | A 2004-ish tube typing out a fake session onto a canvas texture, its phosphor spilling onto the desk. |
 
-The product section explains the actual mechanism — custody, the price oracle,
-redemption, corporate actions, attestation, market hours — alongside a three
-step deposit/mint/redeem walkthrough and a panel on the underlying stock.
+The product section runs Facebook's story across the floating cards — the
+directory, the feed, the moat, the listing, the rename, and what any of that
+leaves you owning — then explains the mechanism underneath it: a three step
+deposit/mint/redeem walkthrough and a panel on the underlying stock.
+
+Both card decks and the payout fan are framed by `components/three/FitCamera.tsx`,
+which pulls the camera back far enough that the content fits whatever aspect
+ratio its panel turns out to be. It also takes a `depth` for anything that
+travels toward the camera — the cards magnify as they reorder, and a fixed
+distance crops the outer ones.
 
 ## The faces
 
@@ -99,7 +106,7 @@ nothing. Declare `<bufferGeometry>` with `<bufferAttribute>` children instead.
 
 ## Performance
 
-Lighthouse on the production build, desktop preset: **98 performance, 100
+Lighthouse on the production build, desktop preset: **97-98 performance, 100
 accessibility, 100 best practices, 100 SEO** (LCP 0.6s, CLS 0).
 
 Three.js and react-three-fiber are kept out of the initial bundle behind

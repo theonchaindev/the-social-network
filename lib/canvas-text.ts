@@ -38,23 +38,32 @@ export function drawCardTexture({
 
   ctx.clearRect(0, 0, width, height);
 
+  // Header: index left, era right, hairline under both.
+  ctx.textBaseline = "top";
   ctx.fillStyle = "#e8a33d";
   ctx.font = `500 26px ${mono}`;
-  ctx.textBaseline = "top";
   ctx.letterSpacing = "4px";
   ctx.fillText(index, pad, pad);
 
-  ctx.strokeStyle = "rgba(151,164,182,0.26)";
+  ctx.fillStyle = "rgba(160,176,196,0.9)";
+  ctx.font = `500 24px ${mono}`;
+  ctx.textAlign = "right";
+  ctx.fillText(meta.toUpperCase(), width - pad, pad + 1);
+  ctx.textAlign = "left";
+
+  ctx.strokeStyle = "rgba(151,164,182,0.3)";
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(pad, pad + 56);
-  ctx.lineTo(width - pad, pad + 56);
+  ctx.moveTo(pad, pad + 54);
+  ctx.lineTo(width - pad, pad + 54);
   ctx.stroke();
 
-  // Title, wrapped by hand and stacked up from the meta line.
-  ctx.fillStyle = "#e3ebf4";
-  ctx.font = `400 42px ${serif}`;
+  // Title, set large enough to survive being drawn at ~165px on screen.
+  ctx.fillStyle = "#e7eef6";
   ctx.letterSpacing = "0px";
+  const fontSize = title.length > 22 ? 62 : 72;
+  ctx.font = `400 ${fontSize}px ${serif}`;
+
   const words = title.split(" ");
   const lines: string[] = [];
   let line = "";
@@ -69,19 +78,15 @@ export function drawCardTexture({
   }
   if (line) lines.push(line);
 
-  const metaTop = height - pad - 26;
-  const lineHeight = 50;
-  const titleBottom = metaTop - 34;
-  let y = titleBottom - lines.length * lineHeight;
+  // Centre the title block in the space below the rule.
+  const lineHeight = fontSize * 1.1;
+  const top = pad + 54;
+  const block = lines.length * lineHeight;
+  let y = top + (height - pad - top - block) / 2;
   for (const l of lines) {
     ctx.fillText(l, pad, y);
     y += lineHeight;
   }
-
-  ctx.fillStyle = "rgba(151,164,182,0.8)";
-  ctx.font = `500 20px ${mono}`;
-  ctx.letterSpacing = "3px";
-  ctx.fillText(meta.toUpperCase(), pad, metaTop);
 
   return canvas;
 }

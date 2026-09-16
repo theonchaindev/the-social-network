@@ -13,8 +13,8 @@ export const site = {
   ticker: "METAx",
   tagline: "The network was always an asset.",
   sub: "Facebook turned a list of people into the largest private map of human connection ever assembled. METAx is a concept for what it looks like when exposure to that map settles on-chain.",
-  cta: "Open a position",
-  ctaSecondary: "Read the thesis",
+  cta: "Payouts",
+  ctaSecondary: "The story",
 } as const;
 
 /**
@@ -91,40 +91,40 @@ export const stats: Stat[] = [
 
 export const features = [
   {
-    id: "custody",
-    title: "Shares in a vault",
-    body: "A METAx token exists because a share of META Class A common stock was delivered to a regulated custodian and locked in a segregated account. Tokens are minted on deposit, and only on deposit.",
-    meta: "CUSTODY",
+    id: "directory",
+    title: "A list of people",
+    body: "TheFacebook was a directory with a login. No feed, no advertising, no market. What made it valuable was never what it showed you — it was that it knew, precisely, who already knew whom.",
+    meta: "2004",
   },
   {
-    id: "oracle",
-    title: "The tape, on-chain",
-    body: "Price is not invented here. A signed feed of the NASDAQ consolidated tape is pushed on-chain each block, so the token marks against the same last-sale print the exchange publishes.",
-    meta: "ORACLE",
+    id: "feed",
+    title: "Attention, ranked",
+    body: "News Feed turned a static profile into a stream that somebody had to choose the order of. That choice is the whole business: a ranking function sitting between billions of people and their own attention.",
+    meta: "2006",
   },
   {
-    id: "redeem",
-    title: "Burn to redeem",
-    body: "Send the token back and the custodian releases the share, or its cash value at the next print. The exit is the same door as the entrance, which is what makes the peg hold.",
-    meta: "REDEMPTION",
+    id: "moat",
+    title: "The moat is the size",
+    body: "At five hundred million accounts the graph stopped being reproducible. A competitor can copy the interface in a weekend. Nobody has ever copied the edges.",
+    meta: "2010",
   },
   {
-    id: "actions",
-    title: "Dividends pass through",
-    body: "Meta began paying a dividend in 2024. Splits, buybacks and distributions are applied against the token supply at the record date, so nobody is diluted by an action they never saw.",
-    meta: "CORPORATE ACTIONS",
+    id: "priced",
+    title: "Priced in public",
+    body: "The listing put a number on it — $38 a share, roughly $104bn, the largest technology IPO to that point. From that morning the graph had a quote attached to it.",
+    meta: "2012",
   },
   {
-    id: "attestation",
-    title: "Proof, not promises",
-    body: "The vault publishes a signed reserve report on a fixed cadence — shares held, tokens outstanding, the difference between them. Anyone can check the ratio without asking permission.",
-    meta: "ATTESTATION",
+    id: "argument",
+    title: "The argument",
+    body: "Renaming to Meta was a claim that the next interface would be owned rather than rented. Whatever you make of it, the market has been pricing that claim ever since.",
+    meta: "2021",
   },
   {
-    id: "hours",
-    title: "The market never closes",
-    body: "NASDAQ runs 09:30 to 16:00 Eastern, five days a week. The ledger runs all of them. Settlement is final in seconds rather than two business days.",
-    meta: "T+0 · 24/7",
+    id: "own",
+    title: "What you would own",
+    body: "Not the feed. Not the app. Not the vote. A claim on the cash a connection graph throws off, and the right to walk out of the position whenever you feel like it.",
+    meta: "METAx",
   },
 ] as const;
 

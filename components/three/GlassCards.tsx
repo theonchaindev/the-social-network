@@ -5,6 +5,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Effects } from "./Effects";
+import { FitCamera } from "./FitCamera";
 import { drawCardTexture } from "@/lib/canvas-text";
 import { features } from "@/lib/content";
 import { useIsMobile, useReducedMotion } from "@/hooks/useMediaQuery";
@@ -56,10 +57,9 @@ function Card({
 
   // Fixed slot on a shallow arc; scroll rotates which slot is frontmost.
   const slot = useMemo(() => {
-    const spread = isMobile ? 1.35 : 2.25;
     const col = index - (total - 1) / 2;
     return {
-      x: col * spread * (isMobile ? 0.62 : 0.78),
+      x: col * columnGap(isMobile),
       y: (index % 2 === 0 ? 1 : -1) * (isMobile ? 0.5 : 0.42),
       seed: index * 1.7,
     };
@@ -75,7 +75,7 @@ function Card({
     // Depth reorder: each card's turn at the front comes round as you scroll.
     const phase = (progress.current * total + index) % total;
     const depth = Math.cos((phase / total) * Math.PI * 2);
-    const targetZ = depth * 1.15 + (isHot ? 1.05 : 0);
+    const targetZ = depth * 0.85 + (isHot ? 0.7 : 0);
 
     const drift = reduced ? 0 : Math.sin(time * 0.5 + slot.seed) * 0.11;
     const targetY = slot.y + drift + (isHot ? 0.12 : 0);
@@ -115,10 +115,10 @@ function Card({
           ior={1.34}
           clearcoat={1}
           clearcoatRoughness={0.12}
-          attenuationDistance={0.45}
-          attenuationColor="#16333f"
-          envMapIntensity={0.75}
-          color={hovered === index ? "#87a6bd" : "#6b8698"}
+          attenuationDistance={0.95}
+          attenuationColor="#1b3c4b"
+          envMapIntensity={1.35}
+          color={hovered === index ? "#b3cadd" : "#90aabf"}
           opacity={isMobile ? 0.28 : 1}
           transparent={isMobile}
         />
@@ -150,6 +150,14 @@ function Card({
     </group>
   );
 }
+
+/** Horizontal gap between card slots, shared by the layout and the framing. */
+function columnGap(isMobile: boolean) {
+  return isMobile ? 0.84 : 1.5;
+}
+
+/** Furthest a card ever travels toward the camera: reorder plus hover lift. */
+const MAX_FORWARD = 1.55;
 
 function Deck({ progress, onHover }: Props) {
   const [hovered, setHoveredState] = useState<number | null>(null);
@@ -200,19 +208,30 @@ function Deck({ progress, onHover }: Props) {
   );
 }
 
+function Framing() {
+  const isMobile = useIsMobile();
+  const span = (features.length - 1) * columnGap(isMobile) + CARD_W;
+  // Cards drift and rise on hover, so the vertical extent is more than a card.
+  const height = CARD_H + (isMobile ? 1.5 : 1.3);
+  return (
+    <FitCamera width={span} height={height} margin={1.1} depth={MAX_FORWARD} />
+  );
+}
+
 export default function GlassCardsScene({ progress, onHover }: Props) {
   return (
     <>
+      <Framing />
       <ambientLight intensity={0.16} />
       <directionalLight position={[3, 5, 6]} intensity={0.9} color="#a9c8e2" />
       <directionalLight position={[-6, -1, 3]} intensity={0.7} color="#e8a33d" />
       <Environment resolution={128}>
-        <Lightformer intensity={2.4} position={[0, 5, 4]} scale={[10, 3, 1]} color="#9ec8ea" />
+        <Lightformer intensity={3.4} position={[0, 5, 4]} scale={[10, 3, 1]} color="#9ec8ea" />
         <Lightformer intensity={1.6} position={[-6, 0, 3]} scale={[4, 6, 1]} color="#e8a33d" />
         <Lightformer intensity={1} position={[5, -3, 2]} scale={[6, 6, 1]} color="#17383f" />
       </Environment>
       <Deck progress={progress} onHover={onHover} />
-      <Effects bloom={0.38} aberration={0.0005} grain={0.026} vignette={0.5} />
+      <Effects bloom={0.34} aberration={0.00018} grain={0.026} vignette={0.5} />
     </>
   );
 }

@@ -5,10 +5,16 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Effects } from "./Effects";
 import { ATLAS_COLS, ATLAS_ROWS, ATLAS_TILES, buildAvatarAtlas } from "@/lib/avatars";
-import { fibonacciSphere, seededRandom } from "@/lib/three-utils";
+import { seededRandom } from "@/lib/three-utils";
+import { FitCamera } from "./FitCamera";
 import { useIsMobile, useReducedMotion } from "@/hooks/useMediaQuery";
 
-const RADIUS = 2.75;
+/** Two concentric rings read as a payout diagram; a sphere reads as clutter. */
+const RINGS = [
+  { radius: 1.45, count: 9, mobile: 6 },
+  { radius: 2.45, count: 16, mobile: 11 },
+];
+const OUTER = 2.45;
 
 const srgbChunk = /* glsl */ `
   vec3 srgbToLinear(vec3 c) {
@@ -50,12 +56,12 @@ const spokeFragment = /* glsl */ `
 
   void main() {
     float travel = fract(uTime * vSpeed + vPhase);
-    float packet = smoothstep(0.075, 0.0, abs(vT - travel));
+    float packet = smoothstep(0.055, 0.0, abs(vT - travel));
     // A short comet tail behind the packet.
-    float tail = smoothstep(0.24, 0.0, clamp(travel - vT, 0.0, 1.0)) * 0.34;
+    float tail = smoothstep(0.2, 0.0, clamp(travel - vT, 0.0, 1.0)) * 0.22;
 
     vec3 col = mix(srgbToLinear(uBase), srgbToLinear(uHot), max(packet, tail * 0.7));
-    float alpha = 0.07 + packet * 0.95 + tail * 0.28;
+    float alpha = 0.1 + packet * 0.9 + tail * 0.2;
     gl_FragColor = vec4(col, alpha);
   }
 `;
@@ -121,9 +127,7 @@ const holderFragment = /* glsl */ `
 function Fan() {
   const isMobile = useIsMobile();
   const reduced = useReducedMotion();
-  const holders = isMobile ? 26 : 46;
-
-  const group = useRef<THREE.Group>(null);
+    const group = useRef<THREE.Group>(null);
   const mesh = useRef<THREE.InstancedMesh>(null);
   const spokeMaterial = useRef<THREE.ShaderMaterial>(null);
   const holderMaterial = useRef<THREE.ShaderMaterial>(null);
@@ -142,10 +146,27 @@ function Fan() {
   useEffect(() => () => atlas.dispose(), [atlas]);
 
   const data = useMemo(() => {
-    const rand = seededRandom(holders * 977 + 3);
-    // Front hemisphere only: spokes running away from camera read as clutter.
-    const points = fibonacciSphere(holders * 2, RADIUS).filter((p) => p.z > -0.6);
-    const positions = points.slice(0, holders);
+    const rand = seededRandom(977);
+
+    const positions: THREE.Vector3[] = [];
+    const scales: number[] = [];
+    RINGS.forEach((ring, r) => {
+      const count = isMobile ? ring.mobile : ring.count;
+      // Offset every other ring so spokes never overlap end to end.
+      const offset = r * 0.5 * ((Math.PI * 2) / count);
+      for (let i = 0; i < count; i++) {
+        const angle = offset + (i / count) * Math.PI * 2 + (rand() - 0.5) * 0.06;
+        const radius = ring.radius * (0.97 + rand() * 0.06);
+        positions.push(
+          new THREE.Vector3(
+            Math.cos(angle) * radius,
+            Math.sin(angle) * radius,
+            (rand() - 0.5) * 0.28,
+          ),
+        );
+        scales.push((r === 0 ? 0.3 : 0.26) * (0.9 + rand() * 0.2));
+      }
+    });
 
     const count = positions.length;
     const spokePos = new Float32Array(count * 2 * 3);
@@ -159,7 +180,7 @@ function Fan() {
 
     positions.forEach((p, i) => {
       const phase = rand();
-      const speed = 0.13 + rand() * 0.12;
+      const speed = 0.12 + rand() * 0.1;
 
       for (let v = 0; v < 2; v++) {
         const o = (i * 2 + v) * 3;
@@ -189,9 +210,9 @@ function Fan() {
       uvOffsets,
       holderPhase,
       holderSpeed,
-      scales: positions.map(() => 0.24 + rand() * 0.16),
+      scales,
     };
-  }, [holders]);
+  }, [isMobile]);
 
   const spokeUniforms = useMemo(
     () => ({
@@ -224,7 +245,7 @@ function Fan() {
     m.instanceMatrix.needsUpdate = true;
   }, [data]);
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     // Written through the materials: r3f copies the `{ value }` holders when it
     // applies the prop, so the memoised objects are not the live ones.
     const t = reduced ? 0.35 : state.clock.elapsedTime;
@@ -236,8 +257,11 @@ function Fan() {
 
     const g = group.current;
     if (g && !reduced) {
-      g.rotation.y += delta * 0.055;
-      g.rotation.x = Math.sin(state.clock.elapsedTime * 0.2) * 0.1;
+      // Oscillating, not spinning: a full rotation drags holders behind the
+      // core and the diagram stops being readable.
+      const e = state.clock.elapsedTime;
+      g.rotation.y = Math.sin(e * 0.16) * 0.26;
+      g.rotation.x = Math.sin(e * 0.21) * 0.1;
     }
   });
 
@@ -302,6 +326,12 @@ function Fan() {
 export default function PayoutScene() {
   return (
     <>
+      <FitCamera
+        width={(OUTER + 0.34) * 2}
+        height={(OUTER + 0.34) * 2}
+        margin={1.08}
+        depth={0.3}
+      />
       <Fan />
       <Effects bloom={0.55} aberration={0.0004} grain={0.03} vignette={0.6} />
     </>

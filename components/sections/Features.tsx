@@ -56,7 +56,7 @@ export function Features() {
             <p className="label mb-6">The product</p>
             <SplitLines
               as="h2"
-              text="One share in. One token out."
+              text="What you would actually own."
               className="headline max-w-[16ch] text-[clamp(1.9rem,4.4vw,3.5rem)] text-cold-100"
             />
           </div>
