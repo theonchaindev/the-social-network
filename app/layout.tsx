@@ -21,6 +21,9 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  // Absolute, so the OG and card images resolve for crawlers that will not
+  // follow a relative path.
+  metadataBase: new URL("https://www.thesocialnetwork.tech"),
   title: "The Social Network — the network was always an asset",
   description:
     "Every trade pays holders in Meta stock. Two percent, split on-chain, paid pro rata to whoever holds at the snapshot.",
@@ -33,6 +36,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
+    site: "@thesocialnetwrk",
+    creator: "@thesocialnetwrk",
     title: "The Social Network — the network was always an asset",
     description:
       "Every trade pays holders in Meta stock. 70% split on-chain, paid pro rata.",

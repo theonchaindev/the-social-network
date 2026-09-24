@@ -54,6 +54,9 @@ export function Community() {
               </svg>
               {social.label}
             </MagneticButton>
+            {/* The handle in plain text: someone reading on a phone can type it
+                in without trusting a button to open the right account. */}
+            <p className="label mt-4 text-[10px]">{social.handle}</p>
           </div>
 
           <p className="label mt-6 text-[10px]">

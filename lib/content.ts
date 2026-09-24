@@ -1,11 +1,7 @@
-/**
- * TODO: swap in the real handle. Points at x.com's root on purpose — guessing
- * a handle would send people to a stranger's account.
- */
 export const social = {
   label: "Follow on X",
-  handle: "@metax",
-  url: "https://x.com/",
+  handle: "@thesocialnetwrk",
+  url: "https://x.com/thesocialnetwrk",
 } as const;
 
 export const site = {

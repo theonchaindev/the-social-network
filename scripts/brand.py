@@ -422,7 +422,7 @@ def payout_card(w=1080, h=1080):
         x = 80 + i * 320
         d.text((x, 648), k, font=font("JetBrainsMono", 22, "Medium"), fill=COLD_350)
         d.text((x, 688), v, font=font("Playfair", 64), fill=COLD_100)
-    d.text((80, h - 62), "the-social-network-steel.vercel.app  ·  every row is a transaction", font=font("JetBrainsMono", 20, "Medium"), fill=COLD_300)
+    d.text((80, h - 62), "www.thesocialnetwork.tech  ·  every row is a transaction", font=font("JetBrainsMono", 20, "Medium"), fill=COLD_300)
     return img
 
 

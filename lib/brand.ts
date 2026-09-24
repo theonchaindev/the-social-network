@@ -3,7 +3,7 @@ export const brand = {
   name: "The Social Network",
   line: "Friendship was the interface. The list was the asset.",
   headline: "The network was always an asset.",
-  site: "https://the-social-network-steel.vercel.app",
+  site: "https://www.thesocialnetwork.tech",
   defaultTicker: "$TSN",
   colours: [
     { name: "Ink", hex: "#05070D", use: "Ground. Everything sits on this." },
@@ -39,6 +39,7 @@ export const brand = {
     "No stills, poster art, dialogue or music from the film. The line above is ours.",
     "METAx is Backed's ticker for the tokenised stock. It is what we pay out in, never what we are called.",
     "Every claim about payouts links to the chain.",
+    "One account: @thesocialnetwrk. Anything else using the name is not us.",
   ],
   tweets: [
     {
