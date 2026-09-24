@@ -1,0 +1,8 @@
+{
+  "name": "TSN Test",
+  "symbol": "TSNT",
+  "description": "Test launch for The Social Network. Not the real token. Quoted in Meta xStock (METAx) on Meteora DBC.",
+  "image": "https://the-social-network-steel.vercel.app/token/tsn-test.png",
+  "external_url": "https://the-social-network-steel.vercel.app",
+  "attributes": [{ "trait_type": "status", "value": "test" }]
+}
