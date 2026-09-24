@@ -21,9 +21,9 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "METAx — The network was always an asset",
+  title: "The Social Network — the network was always an asset",
   description:
-    "A tokenized-equity hub for the world's largest connection graph. Continuous settlement, fractional ownership, on-chain proof.",
+    "Every trade pays holders in Meta stock. Two percent, split on-chain, paid pro rata to whoever holds at the snapshot.",
   openGraph: {
     title: "The Social Network — the network was always an asset",
     description:

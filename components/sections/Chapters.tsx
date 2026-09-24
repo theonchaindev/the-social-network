@@ -1,10 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SceneCanvas } from "@/components/three/LazyCanvas";
 import { useChapters } from "@/hooks/useChapters";
+import { useHasFinePointer } from "@/hooks/useMediaQuery";
 import { chapters } from "@/lib/content";
+import { chain } from "@/lib/chain";
+import { shortAddress } from "@/lib/distributions";
+import type { GraphHolder } from "@/components/three/GraphScene";
 
 const GraphScene = dynamic(() => import("@/components/three/GraphScene"), {
   ssr: false,
@@ -15,8 +19,31 @@ export function Chapters() {
   const pinned = useRef<HTMLDivElement>(null);
   const blocks = useRef<(HTMLDivElement | null)[]>([]);
   const progress = useRef(0);
+  const canHover = useHasFinePointer();
   const [active, setActive] = useState(0);
   const onActive = useCallback((index: number) => setActive(index), []);
+
+  // Real wallets in the coin, mapped onto the busiest nodes of the drawing.
+  const [holders, setHolders] = useState<GraphHolder[]>([]);
+  const [hoveredHolder, setHoveredHolder] = useState<GraphHolder | null>(null);
+  const onHoverHolder = useCallback((h: GraphHolder | null) => setHoveredHolder(h), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const r = await fetch("/api/holders");
+        if (!r.ok) return;
+        const data = (await r.json()) as { holders?: GraphHolder[] };
+        if (!cancelled && data.holders?.length) setHolders(data.holders);
+      } catch {
+        /* the graph is fine without them */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useChapters({
     section,
@@ -34,7 +61,7 @@ export function Chapters() {
           className="absolute inset-0 h-full w-full"
           camera={{ position: [0, 0, 9], fov: 45 }}
         >
-          <GraphScene progress={progress} />
+          <GraphScene progress={progress} holders={holders} onHoverHolder={onHoverHolder} />
         </SceneCanvas>
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink-deep via-ink-deep/40 to-transparent md:via-ink-deep/20" />
@@ -45,6 +72,33 @@ export function Chapters() {
         <p className="label pointer-events-none absolute left-6 top-10 z-10 md:left-12">
           The idea
         </p>
+
+        {/* Who is actually in the coin */}
+        {holders.length > 0 && (
+          <div className="pointer-events-none absolute bottom-28 right-6 z-10 max-w-[20rem] text-right md:bottom-24 md:right-12">
+            {hoveredHolder ? (
+              <div className="border-r border-amber/70 pr-4">
+                <p className="label mb-2 text-[10px] text-amber">Holder · live</p>
+                <p className="font-mono text-[15px] text-cold-100">
+                  {shortAddress(hoveredHolder.owner)}
+                </p>
+                <p className="label mt-2 text-[10px]">
+                  {hoveredHolder.balance.toLocaleString("en-US", { maximumFractionDigits: 0 })}{" "}
+                  {chain.tokenSymbol} · {(hoveredHolder.share * 100).toFixed(2)}%
+                </p>
+              </div>
+            ) : (
+              <p className="label text-[10px] text-cold-350">
+                {holders.length} wallet{holders.length === 1 ? "" : "s"} in the coin
+                {canHover && (
+                  <>
+                    <span className="mx-2 text-amber">●</span>hover a face
+                  </>
+                )}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Chapter rail */}
         <ol className="pointer-events-none absolute right-6 top-1/2 z-10 hidden -translate-y-1/2 flex-col gap-5 md:right-12 md:flex">

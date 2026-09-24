@@ -11,9 +11,11 @@ import { DynamicBondingCurveClient } from "@meteora-ag/dynamic-bonding-curve-sdk
 import BN from "bn.js";
 import bs58 from "bs58";
 import { chain } from "@/lib/chain";
+import { scanHolders } from "@/lib/holders";
+
+export { scanHolders };
 
 const METAX = new PublicKey(chain.metaxMint);
-const TOKEN = new PublicKey(chain.tokenMint);
 const POOL = new PublicKey(chain.pool);
 const DEV = new PublicKey(chain.devWallet);
 const PAYOUT = new PublicKey(chain.payoutWallet);
@@ -84,53 +86,6 @@ export async function readStats() {
       partnerClaimed: nz(fees.partner.claimedQuoteFee),
     },
   };
-}
-
-export type Holder = { owner: string; balance: number; share: number };
-
-/**
- * Every free RPC refuses the indexed largest-accounts call, so derive owners
- * from the pool's trade history and read each balance directly. Fine for a
- * rehearsal token; the real keeper uses Helius DAS for this.
- */
-export async function scanHolders(): Promise<{ holders: Holder[]; scannedTxs: number }> {
-  const { poolState } = (await client.state.getPool(POOL))!;
-  const exclude = new Set([poolState.baseVault.toBase58(), chain.payoutWallet, chain.devWallet]);
-  const owners = new Set<string>();
-  const sigs = await connection.getSignaturesForAddress(POOL, { limit: 1000 }, "confirmed");
-
-  for (const sig of sigs) {
-    if (sig.err) continue;
-    let tx = null;
-    for (let attempt = 0; attempt < 5 && !tx; attempt++) {
-      try {
-        tx = await connection.getParsedTransaction(sig.signature, { maxSupportedTransactionVersion: 1, commitment: "confirmed" });
-      } catch (e) {
-        if (!/429|Too many|fetch failed/i.test(String(e))) throw e;
-        await sleep(1200 * 2 ** attempt);
-      }
-    }
-    for (const b of tx?.meta?.postTokenBalances ?? []) if (b.mint === chain.tokenMint && b.owner) owners.add(b.owner);
-    await sleep(120);
-  }
-
-  const raw: { owner: string; balance: bigint }[] = [];
-  for (const owner of owners) {
-    if (exclude.has(owner)) continue;
-    await sleep(120);
-    const res = await connection.getParsedTokenAccountsByOwner(new PublicKey(owner), { mint: TOKEN }, "confirmed");
-    let total = BigInt(0);
-    for (const { pubkey, account } of res.value) {
-      if (exclude.has(pubkey.toBase58())) continue;
-      total += BigInt(account.data.parsed.info.tokenAmount.amount);
-    }
-    if (total > BigInt(0)) raw.push({ owner, balance: total });
-  }
-  const sum = raw.reduce((s, h) => s + h.balance, BigInt(0));
-  const holders = raw
-    .map((h) => ({ owner: h.owner, balance: ui(h.balance, 6), share: sum ? Number((h.balance * BigInt(1_000_000)) / sum) / 1_000_000 : 0 }))
-    .sort((a, b) => b.balance - a.balance);
-  return { holders, scannedTxs: sigs.length };
 }
 
 async function send(tx: Transaction, signers: Signer[], label: string) {

@@ -42,7 +42,7 @@ export function Nav({ ready }: { ready: boolean }) {
         className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-6 md:px-12"
       >
         <a href="#hero" className="font-mono text-[13px] tracking-[0.2em] text-white">
-          METAx
+          THE SOCIAL NETWORK
         </a>
 
         <ul className="hidden items-center gap-9 md:flex">

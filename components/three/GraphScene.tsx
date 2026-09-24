@@ -23,14 +23,17 @@ const srgbChunk = /* glsl */ `
 const avatarVertex = /* glsl */ `
   attribute vec2 aUvOffset;
   attribute float aHighlight;
+  attribute float aHolder;
 
   uniform vec2 uTiles;
 
   varying vec2 vUv;
   varying vec2 vLocal;
   varying float vHighlight;
+  varying float vHolder;
 
   void main() {
+    vHolder = aHolder;
     float s = length(vec3(instanceMatrix[0][0], instanceMatrix[0][1], instanceMatrix[0][2]));
     vec4 mv = modelViewMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
     mv.xy += position.xy * s;
@@ -50,6 +53,7 @@ const avatarFragment = /* glsl */ `
   varying vec2 vUv;
   varying vec2 vLocal;
   varying float vHighlight;
+  varying float vHolder;
 
   ${srgbChunk}
 
@@ -68,7 +72,10 @@ const avatarFragment = /* glsl */ `
     // A defined bezel rather than a broad gradient, so these read as framed
     // photographs instead of glass beads.
     float ring = smoothstep(0.84, 0.93, d) * (1.0 - smoothstep(0.97, 1.0, d));
-    col = mix(col, rim, ring * (0.5 + 0.5 * step(0.3, vHighlight)));
+    // A node standing for a real wallet keeps a sodium bezel even at rest.
+    rim = mix(rim, rimHot, vHolder * 0.8);
+    col = mix(col, rim, ring * (0.5 + 0.5 * max(step(0.3, vHighlight), vHolder)));
+    col += rimHot * smoothstep(0.62, 1.0, d) * vHolder * 0.12;
     // The hovered node gets a sodium halo, not just a brighter bezel.
     col += rimHot * smoothstep(0.55, 1.0, d) * step(0.9, vHighlight) * 0.3;
 
@@ -79,7 +86,7 @@ const avatarFragment = /* glsl */ `
     // While one neighbourhood is live, everything else steps back.
     float lit = clamp(vHighlight, 0.0, 1.0);
     col *= mix(0.86, 1.45, lit);
-    col *= mix(1.0, mix(0.2, 1.0, lit), uDim);
+    col *= mix(1.0, mix(0.2, 1.0, max(lit, vHolder * 0.55)), uDim);
 
     gl_FragColor = vec4(col, smoothstep(1.0, 0.93, d));
   }
@@ -123,11 +130,16 @@ const edgeFragment = /* glsl */ `
   }
 `;
 
+export type GraphHolder = { owner: string; balance: number; share: number };
+
 type Props = {
   progress: MutableRefObject<number>;
+  /** Real wallets in the coin, mapped onto the busiest nodes. */
+  holders?: GraphHolder[];
+  onHoverHolder?: (holder: GraphHolder | null) => void;
 };
 
-function Graph({ progress }: Props) {
+function Graph({ progress, holders = [], onHoverHolder }: Props) {
   const isMobile = useIsMobile();
   const reduced = useReducedMotion();
   const count = isMobile ? 90 : 160;
@@ -171,6 +183,36 @@ function Graph({ progress }: Props) {
   }, [count]);
 
   const nodeHighlightData = useMemo(() => new Float32Array(count), [count]);
+
+  /**
+   * Real wallets go on the highest-degree nodes, so the hubs of the drawing are
+   * the people who actually hold the most. Anything past the holder count stays
+   * an anonymous face.
+   */
+  const { holderData, nodeToHolder } = useMemo(() => {
+    const data = new Float32Array(count);
+    const map = new Map<number, GraphHolder>();
+    const byDegree = Array.from({ length: count }, (_, i) => i).sort(
+      (a, b) => graph.neighbours[b].length - graph.neighbours[a].length,
+    );
+    holders.slice(0, count).forEach((h, i) => {
+      const node = byDegree[i];
+      data[node] = 1;
+      map.set(node, h);
+    });
+    return { holderData: data, nodeToHolder: map };
+  }, [count, graph, holders]);
+
+  const holderAttr = useRef<THREE.InstancedBufferAttribute>(null);
+  useEffect(() => {
+    if (!holderAttr.current) return;
+    (holderAttr.current.array as Float32Array).set(holderData);
+    holderAttr.current.needsUpdate = true;
+  }, [holderData]);
+
+  useEffect(() => {
+    onHoverHolder?.(hovered === null ? null : (nodeToHolder.get(hovered) ?? null));
+  }, [hovered, nodeToHolder, onHoverHolder]);
 
   const edgeBuffers = useMemo(() => {
     const { edges, positions, edgeOrder } = graph;
@@ -371,6 +413,11 @@ function Graph({ progress }: Props) {
             attach="attributes-aHighlight"
             args={[nodeHighlightData, 1]}
           />
+          <instancedBufferAttribute
+            ref={holderAttr}
+            attach="attributes-aHolder"
+            args={[holderData, 1]}
+          />
         </planeGeometry>
         <shaderMaterial
           ref={avatarMaterial}
@@ -416,10 +463,10 @@ function Graph({ progress }: Props) {
   );
 }
 
-export default function GraphScene({ progress }: Props) {
+export default function GraphScene({ progress, holders, onHoverHolder }: Props) {
   return (
     <>
-      <Graph progress={progress} />
+      <Graph progress={progress} holders={holders} onHoverHolder={onHoverHolder} />
       <Effects bloom={0.34} aberration={0.00035} grain={0.028} vignette={0.55} />
     </>
   );

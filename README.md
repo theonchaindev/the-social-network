@@ -60,6 +60,15 @@ RPC throttles per method; if the read fails the route serves an empty feed with
 `lib/chain.ts` with env overrides (`PAYOUT_WALLET`, `TOKEN_MINT`,
 `TOKEN_SYMBOL`, `RPC_URL`) for the real launch.
 
+`app/api/holders/route.ts` serves the live holder list, and the chapters graph
+maps those wallets onto its highest-degree nodes: a node standing for a real
+holder keeps a sodium bezel, and hovering it shows the address, balance and
+share. Holders come from `getProgramAccounts` with a memcmp on the mint —
+one call, sub-second, and it catches wallets that received the token by
+transfer. The public RPC refuses the indexed `getTokenLargestAccounts` but
+allows this. An earlier version replayed the pool's trade history instead and
+silently missed anyone who had never traded against the pool.
+
 The chain side — Meteora DBC launch tooling and the keeper that claims fees and
 pays holders — lives in a separate local-only project, not in this repo.
 
