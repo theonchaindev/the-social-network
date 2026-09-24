@@ -4,6 +4,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Effects } from "./Effects";
+import { FitCamera } from "./FitCamera";
 import { buildSocialGraph } from "@/lib/graph";
 import { ATLAS_COLS, ATLAS_ROWS, ATLAS_TILES, buildAvatarAtlas } from "@/lib/avatars";
 import { seededRandom } from "@/lib/three-utils";
@@ -151,6 +152,27 @@ function Graph({ progress, holders = [], onHoverHolder }: Props) {
   const nodeHighlight = useRef<THREE.InstancedBufferAttribute>(null);
   const edgeMaterial = useRef<THREE.ShaderMaterial>(null);
   const avatarMaterial = useRef<THREE.ShaderMaterial>(null);
+  const core = useRef<THREE.Mesh>(null);
+
+  /** Soft radial falloff for the core; a flat disc would show its own edge. */
+  const coreGlow = useMemo(() => {
+    const el = document.createElement("canvas");
+    el.width = el.height = 128;
+    const c = el.getContext("2d");
+    if (c) {
+      const g = c.createRadialGradient(64, 64, 0, 64, 64, 64);
+      g.addColorStop(0, "rgba(255,255,255,0.95)");
+      g.addColorStop(0.35, "rgba(255,255,255,0.28)");
+      g.addColorStop(1, "rgba(255,255,255,0)");
+      c.fillStyle = g;
+      c.fillRect(0, 0, 128, 128);
+    }
+    const tex = new THREE.CanvasTexture(el);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }, []);
+
+  useEffect(() => () => coreGlow.dispose(), [coreGlow]);
   const [hovered, setHovered] = useState<number | null>(null);
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
@@ -327,6 +349,14 @@ function Graph({ progress, holders = [], onHoverHolder }: Props) {
     // Written through the material: r3f copies the `{ value }` holders when it
     // applies the prop, so mutating the memoised object leaves this at zero.
     if (edgeMaterial.current) edgeMaterial.current.uniforms.uProgress.value = p;
+    if (core.current) {
+      const grow = THREE.MathUtils.smoothstep(p, 0, 0.18);
+      core.current.scale.setScalar(0.30 + grow * 0.55);
+      const mat = core.current.material as THREE.MeshBasicMaterial;
+      mat.opacity = grow * (hovered === null ? 0.34 : 0.14) *
+        (reduced ? 1 : 0.85 + Math.sin(state.clock.elapsedTime * 0.9) * 0.15);
+    }
+
     const dimTarget = hovered === null ? 0 : 1;
     if (avatarMaterial.current) {
       const u = avatarMaterial.current.uniforms.uDim;
@@ -341,7 +371,8 @@ function Graph({ progress, holders = [], onHoverHolder }: Props) {
       const t = THREE.MathUtils.clamp((p - order * 0.92) / 0.08, 0, 1);
       const eased = t * t * (3 - 2 * t);
       const degree = graph.neighbours[i].length;
-      const base = 0.1 + Math.min(degree, 12) * 0.03;
+      const base =
+        i === graph.hub ? 0.62 : 0.1 + Math.min(degree, 12) * 0.028;
       const emphasis =
         i === hovered ? 1.5 : nodeHighlightData[i] > 0 ? 1.18 : 1;
       const s = base * eased * emphasis;
@@ -355,8 +386,11 @@ function Graph({ progress, holders = [], onHoverHolder }: Props) {
     m.instanceMatrix.needsUpdate = true;
 
     if (!reduced) {
-      g.rotation.y += delta * 0.04;
-      g.rotation.x = Math.sin(state.clock.elapsedTime * 0.14) * 0.12;
+      // Oscillate, never spin: the layout is a disc now, and a full rotation
+      // would take it edge-on.
+      const e = state.clock.elapsedTime;
+      g.rotation.y = Math.sin(e * 0.13) * 0.34;
+      g.rotation.x = Math.sin(e * 0.17) * 0.13;
     }
     g.updateMatrixWorld();
 
@@ -397,7 +431,20 @@ function Graph({ progress, holders = [], onHoverHolder }: Props) {
   });
 
   return (
-    <group ref={group} position={isMobile ? [0, 0.4, 0] : [2.1, 0, 0]}>
+    <group ref={group} position={isMobile ? [0, MOBILE_LIFT, 0] : [DESKTOP_SHIFT, 0, 0]}>
+      {/* The network itself: everything else hangs off this. */}
+      <mesh ref={core} position={[0, 0, -0.12]}>
+        <circleGeometry args={[1, 48]} />
+        <meshBasicMaterial
+          map={coreGlow}
+          color="#e8a33d"
+          transparent
+          opacity={0.34}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+
       <instancedMesh
         ref={mesh}
         args={[undefined, undefined, count]}
@@ -463,9 +510,35 @@ function Graph({ progress, holders = [], onHoverHolder }: Props) {
   );
 }
 
+/** Radius of the radial layout, plus the outermost avatar's own size. */
+const EXTENT = 3.0 + 0.32;
+/** Desktop keeps the disc right of the chapter copy. */
+const DESKTOP_SHIFT = 1.5;
+/**
+ * Portrait stacks instead of splitting, so the disc rides up into the empty
+ * band above the chapter copy rather than sitting on top of the headline.
+ */
+const MOBILE_LIFT = 2.6;
+
+function Framing() {
+  const isMobile = useIsMobile();
+  // An offset disc needs the frame to cover its travel as well as its radius,
+  // or the far edge falls outside the shot.
+  const shiftX = isMobile ? 0 : DESKTOP_SHIFT;
+  const shiftY = isMobile ? MOBILE_LIFT : 0;
+  return (
+    <FitCamera
+      width={(EXTENT + shiftX) * 2}
+      height={(EXTENT + shiftY) * 2}
+      margin={isMobile ? 1.06 : 1.1}
+    />
+  );
+}
+
 export default function GraphScene({ progress, holders, onHoverHolder }: Props) {
   return (
     <>
+      <Framing />
       <Graph progress={progress} holders={holders} onHoverHolder={onHoverHolder} />
       <Effects bloom={0.34} aberration={0.00035} grain={0.028} vignette={0.55} />
     </>
