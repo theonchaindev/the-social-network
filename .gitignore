@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# brand fonts are fetched by scripts/brand.py (OFL), not committed
+scripts/fonts/

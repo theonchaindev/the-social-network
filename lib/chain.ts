@@ -12,6 +12,10 @@ export const chain = {
   /** The token whose holders get paid. */
   tokenMint: process.env.TOKEN_MINT ?? "FHWizkZePRW1iu8YadHwdSEBdqpzw1PHt6VepdRyHes1",
   tokenSymbol: process.env.TOKEN_SYMBOL ?? "TSNT3",
+  /** DBC virtual pool for the token. */
+  pool: process.env.POOL_ADDRESS ?? "C2nwmviLGgbevRxZxWzYc5mXmgJvY1Rw8niVcvzaLLFB",
+  /** Fee claimer / team wallet: receives the 30% stream. Public address only. */
+  devWallet: process.env.DEV_WALLET ?? "AmPSS4aUEXPMFHFFmd2NUm1aUNefkH8FNyEJmmUhDmmJ",
 } as const;
 
 export type PayoutRow = {
