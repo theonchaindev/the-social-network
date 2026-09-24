@@ -9,11 +9,12 @@ cannot drift apart.
 
 Run: python3 scripts/brand.py   (fonts fetched into scripts/fonts/)
 """
-import math, random
+import math, os, random
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 OUT = "public/brand"
+TOKEN_OUT = "public/token"
 COLD_100 = (195, 204, 217); COLD_300 = (110, 125, 147); COLD_350 = (132, 150, 171)
 AMBER = (232, 163, 61); AMBER_SOFT = (242, 197, 132); FB = (59, 89, 152)
 INK = (5, 7, 13); INK_RAISE = (17, 23, 37); TEAL = (23, 56, 63)
@@ -224,48 +225,105 @@ def circular(img):
 
 
 def build_graph(count, seed=7):
-    """Preferential attachment, then force-directed. Ported from lib/graph.ts."""
+    """Preferential attachment, then a radial layout. Ported from lib/graph.ts.
+
+    Returns positions normalised into roughly [-1, 1], the edges, each node's
+    degree, and the index of the hub the drawing is rooted on.
+    """
     s = [seed]
     def rand():
         s[0] = (s[0] * 1664525 + 1013904223) % 4294967296
         return s[0] / 4294967296
 
-    edges = []; degree = [0] * count
+    edges = []
+    degree = [0] * count
+    neighbours = [[] for _ in range(count)]
     for i in range(1, count):
         links = 1 if i < 4 else (2 if rand() < 0.35 else 1)
         chosen = set()
         for _ in range(links):
             total = sum(degree[j] + 1 for j in range(i))
-            pick = rand() * total; target = 0
+            pick = rand() * total
+            target = 0
             for j in range(i):
                 pick -= degree[j] + 1
-                if pick <= 0: target = j; break
+                if pick <= 0:
+                    target = j
+                    break
             if target not in chosen:
-                chosen.add(target); edges.append((i, target)); degree[i] += 1; degree[target] += 1
+                chosen.add(target)
+                edges.append((i, target))
+                degree[i] += 1
+                degree[target] += 1
+                neighbours[i].append(target)
+                neighbours[target].append(i)
 
-    pos = np.array([[rand() - 0.5, rand() - 0.5] for _ in range(count)]) * 4.0
-    pos[0] = 0
-    k = 1.15
-    for it in range(260):
-        temp = 0.9 * (1 - it / 260) + 0.02
-        disp = np.zeros_like(pos)
-        diff = pos[:, None, :] - pos[None, :, :]
-        dist = np.maximum(np.linalg.norm(diff, axis=-1), 1e-3)
-        rep = (k * k) / dist
-        np.fill_diagonal(rep, 0)
-        disp += (diff / dist[..., None] * rep[..., None]).sum(1)
-        for a, b in edges:
-            dv = pos[a] - pos[b]; dd = max(np.linalg.norm(dv), 1e-3)
-            f = (dd * dd) / k
-            disp[a] -= dv / dd * f; disp[b] += dv / dd * f
-        ln = np.maximum(np.linalg.norm(disp, axis=1, keepdims=True), 1e-3)
-        pos += disp / ln * np.minimum(ln, temp)
-        pos *= 0.995
+    # Root on the most-connected node: preferential attachment does not
+    # guarantee node 0 becomes the hub.
+    hub = max(range(count), key=lambda i: degree[i])
+    depth = [-1] * count
+    parent = [-1] * count
+    depth[hub] = 0
+    order = []
+    queue = [hub]
+    head = 0
+    while head < len(queue):
+        node = queue[head]; head += 1
+        order.append(node)
+        for nxt in neighbours[node]:
+            if depth[nxt] != -1:
+                continue
+            depth[nxt] = depth[node] + 1
+            parent[nxt] = node
+            queue.append(nxt)
+    max_depth = max(1, max(depth))
+    for i in range(count):
+        if depth[i] == -1:
+            depth[i] = max_depth
+            order.append(i)
 
-    lo, hi = pos.min(0), pos.max(0)
-    pos = (pos - (lo + hi) / 2)
-    pos /= max(np.linalg.norm(hi - lo), 1e-6) / 2.0
-    return pos, edges, degree
+    children = [[] for _ in range(count)]
+    for i in range(count):
+        if parent[i] >= 0:
+            children[parent[i]].append(i)
+
+    # A busy limb earns a wider wedge than a single leaf.
+    weight = [1.0] * count
+    for node in reversed(order):
+        if children[node]:
+            weight[node] = sum(weight[c] for c in children[node])
+
+    angle = [0.0] * count
+    stack = [(hub, 0.0, math.tau)]
+    while stack:
+        node, lo, hi = stack.pop()
+        angle[node] = (lo + hi) / 2
+        cursor = lo
+        for child in children[node]:
+            span = (hi - lo) * (weight[child] / weight[node])
+            stack.append((child, cursor, cursor + span))
+            cursor += span
+
+    # Ring radius blends depth with population, so the sparse deep rings do not
+    # pile up at the rim and the populated ones fill the disc.
+    per_depth = [0] * (max_depth + 1)
+    for i in range(count):
+        per_depth[depth[i]] += 1
+    ring = [0.0] * (max_depth + 1)
+    inner, seen = 0.3, 0
+    for d in range(max_depth + 1):
+        seen += per_depth[d]
+        t = 0.5 * (d / max_depth) + 0.5 * math.sqrt(seen / count)
+        ring[d] = 0.0 if d == 0 else inner + (1 - inner) * t
+
+    pos = np.zeros((count, 2), dtype=np.float32)
+    for i in range(count):
+        r = ring[depth[i]] * (0.94 + rand() * 0.12)
+        a = angle[i] + (rand() - 0.5) * 0.1
+        pos[i] = (math.cos(a) * r, math.sin(a) * r)
+    pos[hub] = (0.0, 0.0)
+
+    return pos, edges, degree, hub
 
 
 def network(w, h, count=120, seed=7, scale=1.0, cx=0.5, cy=0.5, lit=None):
@@ -278,7 +336,9 @@ def network(w, h, count=120, seed=7, scale=1.0, cx=0.5, cy=0.5, lit=None):
         px += np.array(col) * np.clip(1 - d, 0, 1)[:, :, None] ** 2
     img = Image.fromarray(np.clip(px, 0, 255).astype(np.uint8))
 
-    pos, edges, degree = build_graph(count, seed)
+    pos, edges, degree, hub = build_graph(count, seed)
+    if lit is None:
+        lit = hub  # the centre is what the mark is about
     span = min(w, h) * 0.46 * scale
     pts = [(w * cx + p[0] * span, h * cy + p[1] * span) for p in pos]
 
@@ -292,7 +352,7 @@ def network(w, h, count=120, seed=7, scale=1.0, cx=0.5, cy=0.5, lit=None):
     tile_rand = lambda: rand.random()
     order = sorted(range(count), key=lambda i: degree[i])
     for i in order:
-        r = int(max(7, min(30, 7 + degree[i] * 2.1)) * scale)
+        r = int((34 if i == hub else max(7, min(30, 7 + degree[i] * 2.1))) * scale)
         tile = circular(avatar_tile(max(24, r * 4), tile_rand, None).resize((r * 2, r * 2), Image.LANCZOS))
         ring = Image.new("RGBA", tile.size, (0, 0, 0, 0))
         rd = ImageDraw.Draw(ring)
@@ -319,7 +379,7 @@ def wordmark(w=2400, h=620):
 
 
 def avatar(size=400):
-    img = network(size, size, count=46, seed=11, scale=1.35, lit=3)
+    img = network(size, size, count=46, seed=11, scale=0.84)
     return img
 
 
@@ -378,6 +438,16 @@ def quote_card(w=1080, h=1080):
     return img
 
 
+def token_mark(size=512):
+    """The square logo the token itself carries: the network, centred on its hub.
+
+    Deliberately wordless. It is rendered at 24px in a wallet list as often as
+    it is seen full size, so it has to survive as a shape.
+    """
+    img = network(size, size, count=44, seed=11, scale=0.80)
+    return img
+
+
 def palette(w=1600, h=420):
     img = Image.new("RGB", (w, h), INK); d = ImageDraw.Draw(img)
     sw = [("Ink", INK, "#05070D"), ("Ink raise", INK_RAISE, "#111725"), ("Teal shadow", TEAL, "#17383F"),
@@ -393,7 +463,7 @@ def palette(w=1600, h=420):
 
 if __name__ == "__main__":
     print("rain plate…");    rain(1600, 900, t=11.0, seed=1).save(f"{OUT}/rain.png", optimize=True)
-    print("network plate…"); network(1600, 900, count=150, seed=7, scale=1.0, lit=2).save(f"{OUT}/network.png", optimize=True)
+    print("network plate…"); network(1600, 900, count=150, seed=7, scale=0.92).save(f"{OUT}/network.png", optimize=True)
     print("avatar…");        avatar().save(f"{OUT}/avatar.png", optimize=True)
     print("banner…");        banner().save(f"{OUT}/x-banner.png", optimize=True)
     print("og…");            og().save(f"{OUT}/og.png", optimize=True)
@@ -401,4 +471,9 @@ if __name__ == "__main__":
     print("quote card…");    quote_card().save(f"{OUT}/quote-card.png", optimize=True)
     print("wordmark…");      wordmark().save(f"{OUT}/wordmark.png")
     print("palette…");       palette().save(f"{OUT}/palette.png", optimize=True)
+    print("token mark…")
+    os.makedirs(TOKEN_OUT, exist_ok=True)
+    mark = token_mark()
+    mark.save(f"{TOKEN_OUT}/mark.png", optimize=True)
+    mark.resize((128, 128), Image.LANCZOS).save(f"{TOKEN_OUT}/mark-128.png", optimize=True)
     print("done")
