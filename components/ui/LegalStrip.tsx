@@ -13,8 +13,10 @@ export function LegalStrip() {
         No token, no market, no custody arrangement, no reserve — nothing here
         is financial advice or an offer to sell securities. Historical dates and
         figures about Facebook and Meta are drawn from the company&rsquo;s own
-        disclosures; every METAx figure is invented, the transaction feed is
-        simulated, and the faces are generated artwork. This is an independent
+        disclosures; every METAx figure is invented and the faces are generated artwork. The
+        distributions feed is the exception: it reads real transactions from a
+        small rehearsal token on Solana mainnet, shown so the mechanism can be
+        verified, not as an offer of anything. This is an independent
         concept site, not affiliated with or endorsed by Meta Platforms, Inc.,
         and not associated with any film or its rights holders.
       </p>

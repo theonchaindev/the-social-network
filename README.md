@@ -49,16 +49,19 @@ NDC, take the nearest within its projected radius.
 
 ## The distributions feed
 
-`components/sections/Distributions.tsx` streams a ledger of outbound payments
-alongside the payout fan, with running totals and a countdown to the next
-round. **None of it is real.** Rows are generated client-side, the section is
-labelled "Simulated feed" in the panel header, carries a screen-reader caption
-saying the same, and closes with a line stating that no transaction shown has
-taken place.
+`app/api/payouts/route.ts` reads the payout wallet's METAx transfers straight
+from Solana mainnet and serves them as the ledger in the Distributions section.
+Every transaction in which the payout wallet's METAx balance went *down* is a
+round; every other owner whose balance went *up* in it is a recipient. Reading
+balance deltas rather than instructions keeps it independent of transaction
+version and batching. Cached with a two-minute revalidation, because the free
+RPC throttles per method; if the read fails the route serves an empty feed with
+`degraded: true` rather than failing a build. Wallet and mints live in
+`lib/chain.ts` with env overrides (`PAYOUT_WALLET`, `TOKEN_MINT`,
+`TOKEN_SYMBOL`, `RPC_URL`) for the real launch.
 
-The opening rows come from a fixed seed so the server and the client render an
-identical table and hydration stays quiet; randomness only starts after mount.
-The stream pauses when the section is off screen.
+The chain side — Meteora DBC launch tooling and the keeper that claims fees and
+pays holders — lives in a separate local-only project, not in this repo.
 
 ## Structure
 

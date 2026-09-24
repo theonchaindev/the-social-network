@@ -153,7 +153,7 @@ export const timeline = [
 ] as const;
 
 export const tickerItems = [
-  "CONCEPT SITE · NOT A REAL PRODUCT",
+  "PAYOUTS · LIVE FROM MAINNET",
   "THEFACEBOOK LAUNCHED 04 FEB 2004",
   "500,000,000 ACCOUNTS · JUL 2010",
   "IPO $38.00 · 18 MAY 2012",

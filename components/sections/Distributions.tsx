@@ -6,90 +6,79 @@ import { SceneCanvas } from "@/components/three/LazyCanvas";
 import { SplitLines } from "@/components/ui/SplitLines";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import { useReducedMotion } from "@/hooks/useMediaQuery";
-import {
-  CLOCK_START,
-  DISTRIBUTION_INTERVAL,
-  formatAmount,
-  formatClock,
-  formatUsd,
-  nextPayout,
-  Payout,
-  seedPayouts,
-} from "@/lib/distributions";
+import { chain, type PayoutFeed } from "@/lib/chain";
+import { formatAmount, formatTime, formatUsd, shortAddress } from "@/lib/distributions";
 
 const PayoutScene = dynamic(() => import("@/components/three/PayoutScene"), {
   ssr: false,
 });
 
 const ROWS = 9;
-/** Where the running totals start, so the counters are not at zero on load. */
-const BASE_DISTRIBUTED = 41_882_140.55;
-const BASE_HOLDERS = 184_902;
-const BASE_ROUNDS = 6_114;
+const POLL_MS = 60_000;
 
 export function Distributions() {
   const section = useRef<HTMLElement>(null);
   const copy = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
 
-  // Seeded, so server and client render the same table and hydration is quiet.
-  const [rows, setRows] = useState<Payout[]>(() => seedPayouts(ROWS));
-  const clock = useRef(CLOCK_START);
-  const [distributed, setDistributed] = useState(BASE_DISTRIBUTED);
-  const [paid, setPaid] = useState(BASE_HOLDERS);
-  const [countdown, setCountdown] = useState(252);
+  // Nothing is rendered from data on the server: the feed is fetched after
+  // mount, so the first paint is identical on both sides and hydration is quiet.
+  const [feed, setFeed] = useState<PayoutFeed | null>(null);
+  const [error, setError] = useState(false);
   const [live, setLive] = useState(false);
 
   useRevealOnScroll(copy, { stagger: 0.08, start: "top 82%" });
 
-  // Only run the stream while the section is actually on screen.
   useEffect(() => {
     const el = section.current;
     if (!el) return;
     const io = new IntersectionObserver(
       ([entry]) => setLive(entry.isIntersecting),
-      { rootMargin: "120px" },
+      { rootMargin: "240px" },
     );
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
   useEffect(() => {
-    if (!live || reduced) return;
-
+    let cancelled = false;
     let timer = 0;
-
-    const tick = () => {
-      const gap = 900 + Math.random() * 1700;
-      timer = window.setTimeout(() => {
-        clock.current += 1 + Math.floor(Math.random() * 4);
-        const row = nextPayout(clock.current);
-        setRows((prev) => [row, ...prev].slice(0, ROWS));
-        setDistributed((d) => d + row.usd);
-        setPaid((p) => p + 1);
-        tick();
-      }, gap);
+    const load = async () => {
+      try {
+        const r = await fetch("/api/payouts", { cache: "no-store" });
+        if (!r.ok) throw new Error(String(r.status));
+        const data = (await r.json()) as PayoutFeed;
+        if (!cancelled) {
+          setFeed(data);
+          setError(false);
+        }
+      } catch {
+        if (!cancelled) setError(true);
+      }
+      if (!cancelled && live) timer = window.setTimeout(load, POLL_MS);
     };
+    void load();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [live]);
 
-    tick();
-    return () => window.clearTimeout(timer);
-  }, [live, reduced]);
-
-  useEffect(() => {
-    if (!live || reduced) return;
-    const id = window.setInterval(() => {
-      setCountdown((c) => (c <= 1 ? DISTRIBUTION_INTERVAL : c - 1));
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [live, reduced]);
-
-  const rounds = BASE_ROUNDS + Math.floor((paid - BASE_HOLDERS) / 40);
+  const rows = feed?.rows.slice(0, ROWS) ?? [];
+  const usd = feed?.metaxUsd ?? null;
+  const t = feed?.totals;
 
   const totals = [
-    { label: "Distributed to date", value: formatUsd(distributed) },
-    { label: "Holder payments", value: paid.toLocaleString("en-US") },
-    { label: "Rounds settled", value: rounds.toLocaleString("en-US") },
-    { label: "Next round", value: formatClock(countdown).slice(3) },
+    {
+      label: "Distributed to date",
+      value: t ? (t.distributedUsd != null ? formatUsd(t.distributedUsd) : `${formatAmount(t.distributedUi)} METAx`) : "—",
+    },
+    { label: "Holder payments", value: t ? t.payments.toLocaleString("en-US") : "—" },
+    { label: "Rounds settled", value: t ? t.rounds.toLocaleString("en-US") : "—" },
+    {
+      label: "Last round",
+      value: t?.lastRoundAt ? `${formatTime(t.lastRoundAt)} UTC` : "—",
+    },
   ];
 
   return (
@@ -104,7 +93,7 @@ export function Distributions() {
             <p className="label mb-6">Distributions</p>
             <SplitLines
               as="h2"
-              text="Every fee goes back out."
+              text="Seventy percent goes back out."
               className="headline max-w-[15ch] text-[clamp(1.9rem,4.4vw,3.5rem)] text-cold-100"
               start="top 82%"
             />
@@ -113,14 +102,15 @@ export function Distributions() {
             data-reveal
             className="max-w-[40ch] text-[15px] leading-relaxed text-cold-300"
           >
-            The contract holds nothing. Fees collected on every METAx trade are
-            swept on a fixed cadence and sent straight out to holders, pro rata,
-            in one batch. Its only job is to empty itself.
+            Every trade pays 2%. The program splits it on-chain: 70% to the
+            payout wallet, which is emptied to holders pro rata in Meta stock,
+            30% to the team. Nothing here is a promise — every row below is a
+            transaction you can open.
           </p>
         </div>
 
         <div className="grid gap-px overflow-hidden border border-cold-500/20 bg-cold-500/20 lg:grid-cols-[1.05fr_1.35fr]">
-          {/* The fan: the contract at the centre, paying outward */}
+          {/* The fan: the payout wallet at the centre, paying outward */}
           <div className="relative min-h-[320px] min-w-0 bg-ink-deep md:min-h-[420px]">
             <SceneCanvas
               className="absolute inset-0 h-full w-full"
@@ -130,9 +120,9 @@ export function Distributions() {
             </SceneCanvas>
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-ink-deep via-ink-deep/70 to-transparent" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-start gap-1 p-5 sm:flex-row sm:items-end sm:justify-between">
-              <p className="label text-[10px]">Outbound · live view</p>
+              <p className="label text-[10px]">Outbound · {chain.tokenSymbol} holders</p>
               <p className="label text-[10px] text-amber">
-                {rows.length ? formatAmount(rows[0].amount) : "0.0000"} METAx
+                {rows[0] ? `${formatAmount(rows[0].amountUi)} METAx` : "awaiting first round"}
               </p>
             </div>
           </div>
@@ -141,27 +131,32 @@ export function Distributions() {
           <div className="min-w-0 bg-ink-deep">
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-cold-500/20 px-5 py-4">
               <p className="label text-[10px]">Outbound transactions</p>
-              <p className="label flex items-center gap-2 text-[10px]">
+              <a
+                href={`https://solscan.io/account/${chain.payoutWallet}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="label flex items-center gap-2 text-[10px] transition-colors duration-500 hover:text-amber"
+              >
                 <span
                   className="block h-1.5 w-1.5 rounded-full bg-amber"
                   style={{
                     animation:
-                      live && !reduced ? "pulse-dot 2s ease-in-out infinite" : undefined,
+                      live && !reduced && feed ? "pulse-dot 2s ease-in-out infinite" : undefined,
                   }}
                 />
-                Simulated feed
-              </p>
+                On-chain · payout wallet {shortAddress(chain.payoutWallet)}
+              </a>
             </div>
 
             <div className="min-w-0 overflow-x-auto">
-              <table className="w-full min-w-[520px] border-collapse">
+              <table className="w-full min-w-[560px] border-collapse">
                 <caption className="sr-only">
-                  Simulated outbound METAx distributions to holder wallets. This
-                  is a concept site; these transactions are not real.
+                  Outbound Meta xStock distributions from the payout wallet to
+                  {chain.tokenSymbol} holders, read from the Solana blockchain.
                 </caption>
                 <thead>
                   <tr className="border-b border-cold-500/15">
-                    {["Time", "Recipient", "Amount", "Value", "Tx"].map((h) => (
+                    {["Time (UTC)", "Recipient", "METAx", "Value", "Tx"].map((h) => (
                       <th
                         key={h}
                         scope="col"
@@ -175,39 +170,52 @@ export function Distributions() {
                 <tbody>
                   {rows.map((row, i) => (
                     <tr
-                      key={row.id}
+                      key={`${row.signature}-${row.recipient}`}
                       className="border-b border-cold-500/10 last:border-0"
-                      style={{
-                        // Capped: any dimmer and the 11px mono drops under the
-                        // 4.5:1 contrast floor on this background.
-                        opacity: Math.max(0.87, 1 - i * 0.018),
-                        animation:
-                          i === 0 && live && !reduced
-                            ? "row-in 0.7s cubic-bezier(0.16,1,0.3,1)"
-                            : undefined,
-                      }}
+                      style={{ opacity: Math.max(0.87, 1 - i * 0.018) }}
                     >
                       <td className="px-5 py-3 font-mono text-[11px] text-cold-350">
-                        {formatClock(row.clock)}
+                        {formatTime(row.blockTime)}
                       </td>
-                      <td
-                        className={`px-5 py-3 font-mono text-[11px] ${
-                          i === 0 ? "text-cold-100" : "text-cold-200"
-                        }`}
-                      >
-                        {row.wallet}
+                      <td className={`px-5 py-3 font-mono text-[11px] ${i === 0 ? "text-cold-100" : "text-cold-200"}`}>
+                        <a
+                          href={`https://solscan.io/account/${row.recipient}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="transition-colors duration-500 hover:text-amber"
+                        >
+                          {shortAddress(row.recipient)}
+                        </a>
                       </td>
                       <td className="px-5 py-3 font-mono text-[11px] tabular-nums text-amber">
-                        {formatAmount(row.amount)}
+                        {formatAmount(row.amountUi)}
                       </td>
                       <td className="px-5 py-3 font-mono text-[11px] tabular-nums text-cold-200">
-                        {formatUsd(row.usd)}
+                        {usd ? formatUsd(row.amountUi * usd) : "—"}
                       </td>
                       <td className="px-5 py-3 font-mono text-[11px] text-cold-350">
-                        {row.hash}
+                        <a
+                          href={`https://solscan.io/tx/${row.signature}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="transition-colors duration-500 hover:text-amber"
+                        >
+                          {row.signature.slice(0, 8)}…
+                        </a>
                       </td>
                     </tr>
                   ))}
+                  {!rows.length && (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-10 text-center font-mono text-[11px] text-cold-350">
+                        {error || feed?.degraded
+                          ? "Feed unavailable — the chain is still the record. Try again shortly."
+                          : feed
+                            ? "No payouts yet. The first round settles once the pool has fees and holders."
+                            : "Reading the chain…"}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -226,21 +234,17 @@ export function Distributions() {
         </dl>
 
         <p className="label mt-6 text-[10px] text-cold-350">
-          Illustrative. No transaction shown here has taken place.
+          Live from Solana mainnet, refreshed every two minutes. {chain.tokenSymbol} is a
+          rehearsal token; amounts are small by design.
         </p>
       </div>
 
       <style>{`
-        @keyframes row-in {
-          from { opacity: 0; transform: translateY(-8px); }
-          to { opacity: 1; transform: none; }
-        }
         @keyframes pulse-dot {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.25; }
         }
         @media (prefers-reduced-motion: reduce) {
-          @keyframes row-in { from { opacity: 1; } to { opacity: 1; } }
           @keyframes pulse-dot { 0%, 100% { opacity: 1; } }
         }
       `}</style>
