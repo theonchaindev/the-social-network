@@ -25,10 +25,18 @@ export const metadata: Metadata = {
   description:
     "A tokenized-equity hub for the world's largest connection graph. Continuous settlement, fractional ownership, on-chain proof.",
   openGraph: {
-    title: "METAx — The network was always an asset",
+    title: "The Social Network — the network was always an asset",
     description:
-      "A tokenized-equity hub for the world's largest connection graph.",
+      "Every trade pays holders in Meta stock. 70% split on-chain, paid pro rata.",
     type: "website",
+    images: [{ url: "/brand/og.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The Social Network — the network was always an asset",
+    description:
+      "Every trade pays holders in Meta stock. 70% split on-chain, paid pro rata.",
+    images: ["/brand/og.png"],
   },
 };
 
